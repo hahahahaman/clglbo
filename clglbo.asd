@@ -13,5 +13,9 @@
   :serial t
   :components ((:module src
                 :components ((:file "package")
+                             (:file "utils")
+                             (:file "shader")
+                             (:file "texture")
+                             (:file "texture")
                              (:file "clglbo")))))
 

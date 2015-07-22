@@ -12,6 +12,7 @@
     :initform +game-active+
     :type (unsigned-byte 3))
    (keys
+    :initform nil
     :type list)
    (width
     :type (unsigned-byte 32)
@@ -21,7 +22,8 @@
     :initarg :height)))
 
 (defgeneric process-input (GAME DT))
-(defgeneric update (GAME dt))
+(defgeneric update (GAME DT))
 (defgeneric render (GAME))
 
-(defmethod initialize-instance :after ((g game) &key))
+(defmethod initialize-instance :after ((g game) &key)
+  t)
