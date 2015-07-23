@@ -38,7 +38,7 @@
 (defmethod initialize-instance :after ((tex texture2d) &key)
   (setf (id tex) (gl:gen-textures 1)))
 
-(defun generate-texture2d (texture tex-width tex-height data)
+(defun texture2d-generate (texture tex-width tex-height data)
   (declare (texture2d texture) (unsigned-byte width height))
   (with-slots (width height id
                wrap-s wrap-t
@@ -54,6 +54,6 @@
     (gl:tex-parameter :texture-2d :texture-mag-filter filter-max)
     (gl:bind-texture :texture-2d 0)))
 
-(defun bind-texture2d (texture)
+(defun texture2d-bind (texture)
   (declare (texture2d texture))
   (gl:bind-texture :texture-2d (id texture)))

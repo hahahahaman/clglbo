@@ -5,5 +5,6 @@
 ;;; "clglbo" goes here. Hacks and glory await!
 
 (defclass breakout-window (window)
-  (breakout
-   ))
+  ((breakout
+    :type game)
+   ()))

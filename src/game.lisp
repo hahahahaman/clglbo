@@ -2,7 +2,7 @@
 
 (in-package #:clglbo)
 
-(defenum:defenum Game-State
+(defenum:defenum *game-state*
                  ((+game-active+ 0)
                   +game-menu+
                   +game-win+))
@@ -26,18 +26,18 @@
    :width 0
    :height 0))
 
-(defgeneric process-input (game dt))
-(defgeneric update-game (game dt))
-(defgeneric render-game (game))
+(defgeneric game-process-input (game dt))
+(defgeneric game-update (game dt))
+(defgeneric game-render (game))
 
 (defmethod initialize-instance :after ((g game) &key)
   t)
 
-(defmethod process-input ((game game) dt)
+(defmethod game-process-input ((game game) dt)
   t)
 
-(defmethod update-game ((game game) dt)
+(defmethod game-update ((game game) dt)
   t)
 
-(defmethod render-game ((game game))
+(defmethod game-render ((game game))
   t)

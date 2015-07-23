@@ -13,11 +13,11 @@
 (defgeneric get-uniform (SHADER NAME))
 |#
 
-(defun use-shader (shader)
+(defun shader-use (shader)
   (declare (type shader shader))
   (gl:use-program (id s)))
 
-(defun compile-shader (shader vert-path frag-path &optional geo-path)
+(defun shader-compile (shader vert-path frag-path &optional geo-path)
   (declare (type shader shader)
            (type string vert-path frag-path))
   (let ((vert (load-shader-file vert-path :vertex-shader))
@@ -37,14 +37,14 @@
     (when geo-path
       (gl:delete-shader geo))))
 
-(defun get-attrib (shader name)
+(defun shader-get-attrib (shader name)
   (declare (type shader shader))
   (let ((attrib (gl:get-attrib-location (id s) name)))
     (if (eql attrib -1)
         (error "Program attribute not found: ~a~%" name)
         attrib)))
 
-(defun get-uniform (shader name)
+(defun shader-get-uniform (shader name)
   (let ((uniform (gl:get-uniform-location (id s) name)))
     (if (eql uniform -1)
         (error "Program uniform not found: ~a~%" name)
