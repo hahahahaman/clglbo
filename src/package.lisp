@@ -1,5 +1,5 @@
 ;;;; package.lisp
 
 (defpackage #:clglbo
-  (:use #:cl))
+  (:use #:cl #:iter))
 

@@ -9,21 +9,35 @@
 
 (defclass game ()
   ((state
-    :initform +game-active+
-    :type (unsigned-byte 3))
+    :type (unsigned-byte 32)
+    :initarg :state)
    (keys
-    :initform nil
-    :type list)
+    :type list
+    :initarg :keys)
    (width
     :type (unsigned-byte 32)
     :initarg :width)
    (height
     :type (unsigned-byte 32)
-    :initarg :height)))
+    :initarg :height))
+  (:default-initargs
+   :state +game-active+
+   :keys nil
+   :width 0
+   :height 0))
 
-(defgeneric process-input (GAME DT))
-(defgeneric update (GAME DT))
-(defgeneric render (GAME))
+(defgeneric process-input (game dt))
+(defgeneric update-game (game dt))
+(defgeneric render-game (game))
 
 (defmethod initialize-instance :after ((g game) &key)
+  t)
+
+(defmethod process-input ((game game) dt)
+  t)
+
+(defmethod update-game ((game game) dt)
+  t)
+
+(defmethod render-game ((game game))
   t)
