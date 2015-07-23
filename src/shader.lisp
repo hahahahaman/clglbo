@@ -4,7 +4,7 @@
 
 (defclass shader ()
   ((id
-    :type %gl:uint
+    :type unsigned-byte
     :accessor id)))
 #|
 (defgeneric use (SHADER))
@@ -19,7 +19,7 @@
 
 (defun check-compile-errors (obj &optional shader-p)
   "Checks Shader Program errors."
-  (declare (type %gl:uint obj) (type boolean shader-p))
+  (declare (type unsigned-byte obj) (type boolean shader-p))
   (let ((status (cffi:foreign-alloc :int)))
     (if shader-p
         (progn
