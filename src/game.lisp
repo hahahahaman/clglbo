@@ -11,9 +11,6 @@
   ((state
     :type (unsigned-byte 32)
     :initarg :state)
-   (keys
-    :type list
-    :initarg :keys)
    (width
     :type (unsigned-byte 32)
     :initarg :width)
@@ -22,7 +19,6 @@
     :initarg :height))
   (:default-initargs
    :state +game-active+
-   :keys nil
    :width 0
    :height 0))
 
@@ -30,7 +26,7 @@
 (defgeneric game-update (game dt))
 (defgeneric game-render (game))
 
-(defmethod initialize-instance :after ((g game) &key)
+(defmethod initialize-instance :after ((game game) &key)
   t)
 
 (defmethod game-process-input ((game game) dt)

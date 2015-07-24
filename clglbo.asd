@@ -13,9 +13,13 @@
   :serial t
   :components ((:module src
                 :components ((:file "package")
+                             (:file "globals")
                              (:file "utils")
                              (:file "shader")
                              (:file "texture")
-                             (:file "texture")
+                             (:file "resource-manager")
+                             (:file "game")
+                             (:file "window")
+                             (:file "breakout")
                              (:file "clglbo")))))
 

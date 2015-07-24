@@ -15,8 +15,8 @@ Simplify glfw based windows
     :initarg :height))
   (:default-initargs
    :title "window"
-   :width 800
-   :height 600))
+   :width *width*
+   :height *height*))
 
 (defgeneric window-load-textures (window))
 (defgeneric window-load-shaders (window))
@@ -28,5 +28,5 @@ Simplify glfw based windows
 
 (defgeneric window-cleanup (window))
 
-(defmethod initialize-instance :after ((window glfw-window) &key)
+(defmethod initialize-instance :after ((window window) &key)
   t)

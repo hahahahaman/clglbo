@@ -4,7 +4,6 @@
 
 ;;; "clglbo" goes here. Hacks and glory await!
 
-(defclass breakout-window (window)
-  ((breakout
-    :type game)
-   ()))
+(defun clglbo()
+  (let ((breakout (make-instance 'breakout-window)))
+    (window-run breakout)))
