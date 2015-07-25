@@ -11,6 +11,11 @@
   (not (eql (find key *keys-pressed*) nil)))
 
 ;; type utils
+(defun concat-vecs (&rest vecs)
+  (apply #'concatenate 'vector
+         (mapcar (lambda (x) (if (typep x 'sequence) x (list x)))
+                 vecs)))
+
 (defun sequence-to-gl-array (sequence type)
   (let ((gl-arr (gl:alloc-gl-array type (length sequence))))
     (dotimes (i (length sequence) gl-arr)
@@ -21,6 +26,9 @@
 
 (defun sizeof (type)
   (cffi-sys:%foreign-type-size type))
+
+(defun sizeof* (type multiply)
+  (* (sizeof type) multiply))
 
 ;; shader utilities
 

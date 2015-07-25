@@ -18,6 +18,7 @@
                              (:file "shader")
                              (:file "texture")
                              (:file "resource-manager")
+                             (:file "sprite-renderer")
                              (:file "game")
                              (:file "window")
                              (:file "breakout")

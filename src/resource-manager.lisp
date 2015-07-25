@@ -38,12 +38,12 @@
          (collect resource)))
   (call-next-method))
 
-(defun make-shader (vert-path frag-path &optional geo-path)
+(defun make-shader (vert-path frag-path &optional (geo-path nil))
   (let ((shader (make-instance 'shader)))
     (compile-shader shader vert-path frag-path geo-path)
     shader))
 
-(defun make-texture (filepath &optional alpha)
+(defun make-texture (filepath &optional (alpha t))
   (declare (boolean alpha))
   (let ((texture (make-instance 'texture2d)))
     (with-slots (internal-format image-format) texture

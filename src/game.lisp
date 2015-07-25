@@ -12,11 +12,11 @@
     :type (unsigned-byte 32)
     :initarg :state)
    (width
-    :type (unsigned-byte 32)
-    :initarg :width)
+    :initarg :width
+    :reader width)
    (height
-    :type (unsigned-byte 32)
-    :initarg :height))
+    :initarg :height
+    :reader height))
   (:default-initargs
    :state +game-active+
    :width 0
@@ -27,7 +27,21 @@
 (defgeneric game-render (game))
 
 (defmethod initialize-instance :after ((game game) &key)
-  t)
+  (setf *shader-manager* (make-instance 'shader-manager)
+        *texture-manager* (make-instance 'texture-manager))
+  (let ((shader (make-shader "data/shaders/sprite.v.glsl"
+                             "data/shaders/sprite.f.glsl")))
+    (load-resource *shader-manager* "sprite" shader)
+    (shader-use shader)
+    (gl:uniformi (shader-get-uniform shader "image") 0)
+    (gl:uniform-matrix-4fv (shader-get-uniform shader "projection")
+                           (kit.glm:ortho-matrix 0.0
+                                                 (cfloat (width game))
+                                                 (cfloat (height game))
+                                                 0.0 -1.0 1.0))
+    (setf *sprite-renderer* (make-instance 'sprite-renderer :shader shader))
+    (load-resource *texture-manager* "face"
+                   (make-texture "data/images/awesomeface.png" t))))
 
 (defmethod game-process-input ((game game) dt)
   t)
@@ -36,4 +50,8 @@
   t)
 
 (defmethod game-render ((game game))
-  t)
+  (sprite-render *sprite-renderer* (get-resource *texture-manager* "face")
+                 (kit.glm:vec2 200.0 200.0)
+                 (kit.glm:vec2 300.0 400.0)
+                 (kit.glm:deg-to-rad 45.0)
+                 (kit.glm:vec3 0.0 1.0 0.0)))

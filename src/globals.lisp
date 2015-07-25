@@ -8,6 +8,10 @@
 (defparameter *keys-pressed* nil)
 (defparameter *buttons-pressed* nil)
 
+(defparameter *shader-manager* nil)
+(defparameter *texture-manager* nil)
+(defparameter *sprite-renderer* nil)
+
 ;; glfw call globals
 
 (defparameter *width* 800)
