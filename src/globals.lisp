@@ -8,7 +8,7 @@
 (defparameter *keys-pressed* nil)
 (defparameter *buttons-pressed* nil)
 
-(defparameter *shader-manager* nil)
+(defparameter *program-manager* nil)
 (defparameter *texture-manager* nil)
 (defparameter *sprite-renderer* nil)
 

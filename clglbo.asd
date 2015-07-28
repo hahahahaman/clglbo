@@ -8,6 +8,7 @@
                #:cl-glfw3
                #:cl-soil
                #:glkit
+               #:trivial-garbage
                #:defenum
                #:qua)
   :serial t
@@ -15,7 +16,7 @@
                 :components ((:file "package")
                              (:file "globals")
                              (:file "utils")
-                             (:file "shader")
+                             (:file "program")
                              (:file "texture")
                              (:file "resource-manager")
                              (:file "sprite-renderer")

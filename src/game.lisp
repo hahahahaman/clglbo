@@ -25,23 +25,26 @@
 (defgeneric game-process-input (game dt))
 (defgeneric game-update (game dt))
 (defgeneric game-render (game))
+(defgeneric game-init (game))
 
-(defmethod initialize-instance :after ((game game) &key)
-  (setf *shader-manager* (make-instance 'shader-manager)
+(defmethod game-init ((game game))
+  (setf *program-manager* (make-instance 'program-manager)
         *texture-manager* (make-instance 'texture-manager))
-  (let ((shader (make-shader "data/shaders/sprite.v.glsl"
-                             "data/shaders/sprite.f.glsl")))
-    (load-resource *shader-manager* "sprite" shader)
-    (shader-use shader)
-    (gl:uniformi (shader-get-uniform shader "image") 0)
-    (gl:uniform-matrix-4fv (shader-get-uniform shader "projection")
+  (let ((program (make-program #p"./data/shaders/sprite.v.glsl"
+                               #p"./data/shaders/sprite.f.glsl")))
+    (load-resource *program-manager* "sprite" program)
+    (program-use program)
+    (gl:uniformi (program-get-uniform program "image") 0)
+    (gl:uniform-matrix-4fv (program-get-uniform program "projection")
                            (kit.glm:ortho-matrix 0.0
                                                  (cfloat (width game))
                                                  (cfloat (height game))
-                                                 0.0 -1.0 1.0))
-    (setf *sprite-renderer* (make-instance 'sprite-renderer :shader shader))
+                                                 0.0
+                                                 -1.0 1.0)
+                           nil)
+    (setf *sprite-renderer* (make-instance 'sprite-renderer :program program))
     (load-resource *texture-manager* "face"
-                   (make-texture "data/images/awesomeface.png" t))))
+                   (make-texture "./data/images/awesomeface.png" nil))))
 
 (defmethod game-process-input ((game game) dt)
   t)
@@ -54,4 +57,4 @@
                  (kit.glm:vec2 200.0 200.0)
                  (kit.glm:vec2 300.0 400.0)
                  (kit.glm:deg-to-rad 45.0)
-                 (kit.glm:vec3 0.0 1.0 0.0)))
+                 (kit.glm:vec3 1.0 1.0 0.0)))

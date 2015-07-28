@@ -12,9 +12,17 @@
 
 ;; type utils
 (defun concat-vecs (&rest vecs)
-  (apply #'concatenate 'vector
-         (mapcar (lambda (x) (if (typep x 'sequence) x (list x)))
-                 vecs)))
+  (let* ((len 0)
+        (vec (apply #'concatenate 'vector
+                    (mapcar (lambda (x) (if (typep x 'sequence)
+                                            (progn
+                                              (incf len (length x))
+                                              x)
+                                            (progn
+                                              (incf len 1)
+                                              (list x))))
+                            vecs))))
+    (coerce vec `(simple-array single-float (,len)))))
 
 (defun sequence-to-gl-array (sequence type)
   (let ((gl-arr (gl:alloc-gl-array type (length sequence))))
@@ -30,7 +38,7 @@
 (defun sizeof* (type multiply)
   (* (sizeof type) multiply))
 
-;; shader utilities
+;; file io
 
 (defun read-entire-file (file)
   "Returns a string with the text content of a file."
@@ -43,31 +51,9 @@
       (return-from read-entire-file str)))
   (error "Unable to find file ~a.~%" file))
 
-(defun check-compile-errors (obj &optional shader-p)
-  "Checks Shader Program errors."
-  (declare (type unsigned-byte obj) (type boolean shader-p))
-  (let ((status (cffi:foreign-alloc :int)))
-    (if shader-p
-        (progn
-          (%gl:get-shader-iv obj :compile-status status)
-          ;; 0 means failure
-          (when (eql (cffi:mem-ref status :int) 0)
-            (error "Shader compile-time error: ~a~%" (gl:get-shader-info-log obj))))
-        (progn
-          (%gl:get-program-iv obj :link-status status)
-          (when (eql (cffi:mem-ref status :int) 0)
-            (error "Program link-time error: ~a~%" (gl:get-program-info-log obj)))))
-    (cffi:foreign-free status)))
-
-(defun load-shader-file (filepath shader-type)
-  (let ((shader (gl:create-shader shader-type))
-        (code (read-entire-file filepath))
-        (status (cffi:foreign-alloc :init)))
-    (gl:shader-source shader code)
-    (gl:compile-shader shader)
-    (check-compile-errors shader t)))
-
 ;;glfw callback
+;;changes global variable
+
 (glfw:def-key-callback key-callback (window key scancode action mod-keys)
   (declare (ignore window scancode mod-keys))
   (when (and (eq key :escape) (eq action :press))

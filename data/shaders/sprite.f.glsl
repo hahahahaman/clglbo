@@ -1,4 +1,4 @@
-#version 330 core
+#version 330
 in vec2 TexCoords;
 out vec4 color;
 
@@ -7,5 +7,5 @@ uniform vec3 spriteColor;
 
 void main()
 {
-  color = vec3(spriteColor, 1.0) * texture(image, TexCoords);
+  color = vec4(spriteColor, 1.0) * texture(image, TexCoords);
 }
