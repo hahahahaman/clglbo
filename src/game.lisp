@@ -36,15 +36,20 @@
     (program-use program)
     (gl:uniformi (program-get-uniform program "image") 0)
     (gl:uniform-matrix-4fv (program-get-uniform program "projection")
-                           (kit.glm:ortho-matrix 0.0
-                                                 (cfloat (width game))
-                                                 (cfloat (height game))
-                                                 0.0
-                                                 -1.0 1.0)
+                           (vector (kit.glm:ortho-matrix 0.0
+                                                  (cfloat (width game))
+                                                  (cfloat (height game))
+                                                  0.0
+                                                  -1.0 1.0))
+                           ;; (vector (kit.math:perspective-matrix (kit.glm:deg-to-rad 45.0)
+                           ;;                               (cfloat (/ *width* *height*))
+                           ;;                               -2.1
+                           ;;                               100.0))
                            nil)
     (setf *sprite-renderer* (make-instance 'sprite-renderer :program program))
-    (load-resource *texture-manager* "face"
-                   (make-texture "./data/images/awesomeface.png" nil))))
+    (load-resource *texture-manager*
+                   "face"
+                   (make-texture2d "./data/images/awesomeface.png" t))))
 
 (defmethod game-process-input ((game game) dt)
   t)
@@ -53,8 +58,10 @@
   t)
 
 (defmethod game-render ((game game))
-  (sprite-render *sprite-renderer* (get-resource *texture-manager* "face")
+  (sprite-render *sprite-renderer*
+                 (get-resource *texture-manager* "face")
                  (kit.glm:vec2 200.0 200.0)
-                 (kit.glm:vec2 300.0 400.0)
-                 (kit.glm:deg-to-rad 45.0)
-                 (kit.glm:vec3 1.0 1.0 0.0)))
+                 (kit.glm:vec2 200.0 300.0)
+                 (kit.glm:deg-to-rad 0.0)
+                 (kit.glm:vec3 1.0 1.0 0.0)
+                 ))

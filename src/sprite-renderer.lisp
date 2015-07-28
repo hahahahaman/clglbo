@@ -27,29 +27,32 @@
                           1.0 0.0 1.0 0.0)
                   :float)))
       (setf quad-vao (gl:gen-vertex-array))
+      (gl:bind-vertex-array quad-vao)
+
       (gl:bind-buffer :array-buffer vbo)
       (gl:buffer-data :array-buffer :static-draw verts)
 
-      (gl:bind-vertex-array quad-vao)
       (gl:enable-vertex-attrib-array 0)
       (gl:vertex-attrib-pointer 0 4 :float nil (sizeof* :float 4) 0)
       (gl:bind-buffer :array-buffer 0)
       (gl:bind-vertex-array 0)
 
       (gl:free-gl-array verts)
-      (gl:delete-buffers (list vbo)))
+      ;; (gl:delete-buffers (list vbo))
+      )
     (trivial-garbage:finalize renderer
                      (lambda ()
                        (gl:delete-vertex-arrays (list quad-vao))))))
 
-(defun sprite-render (sprite-renderer texture position
+(defun sprite-render (sprite-renderer texture2d position
                       &optional
-                        (size (kit.glm:vec2 1.0 1.0))
+                        (size (kit.glm:vec2 10.0 10.0))
                         (rotate 0.0)
                         (color (kit.glm:vec3 1.0 1.0 1.0)))
   (with-slots (program quad-vao) sprite-renderer
     (program-use program)
 
+    (gl:uniformfv (program-get-uniform program "spriteColor") color)
     (let ((model (kit.glm:matrix*
                   (kit.glm:translate (concat-vecs position 0.0))
                   (kit.glm:translate* (cfloat (* 0.5 (aref size 0)))
@@ -60,11 +63,11 @@
                                       (cfloat (* -0.5 (aref size 1)))
                                       0.0)
                   (kit.glm:scale (concat-vecs size 1.0)))))
-      (gl:uniform-matrix-4fv (gl:get-uniform-location (id program) "model") model nil))
-    (gl:uniformfv (program-get-uniform program "spriteColor") color)
+
+      (gl:uniform-matrix-4fv (program-get-uniform program "model") (vector model) nil))
 
     (gl:active-texture :texture0)
-    (texture2d-bind texture)
+    (texture2d-bind texture2d)
 
     (gl:bind-vertex-array quad-vao)
     (gl:draw-arrays :triangles 0 6)

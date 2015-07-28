@@ -38,29 +38,31 @@
 (defmethod initialize-instance :after ((tex texture2d) &key)
   (setf (id tex) (elt (gl:gen-textures 1) 0)))
 
-(defun texture2d-generate (texture tex-width tex-height image)
+(defun texture2d-generate (texture2d tex-width tex-height image)
   (with-slots (width height id
                wrap-s wrap-t
                filter-min filter-max
-               internal-format image-format) texture
+               internal-format image-format) texture2d
     (setf width tex-width
           height tex-height)
     (gl:bind-texture :texture-2d id)
-    (gl:tex-image-2d :texture-2d 0 internal-format width height 0 image-format :unsigned-byte image)
+    (gl:tex-image-2d :texture-2d 0 internal-format
+                     width height 0 image-format
+                     :unsigned-byte image)
     (gl:tex-parameter :texture-2d :texture-wrap-s wrap-s)
     (gl:tex-parameter :texture-2d :texture-wrap-t wrap-t)
     (gl:tex-parameter :texture-2d :texture-min-filter filter-min)
     (gl:tex-parameter :texture-2d :texture-mag-filter filter-max)
     (gl:bind-texture :texture-2d 0)))
 
-(defun texture2d-bind (texture)
-  (declare (texture2d texture))
-  (gl:bind-texture :texture-2d (id texture)))
+(defun texture2d-bind (texture2d)
+  (declare (texture2d texture2d))
+  (gl:bind-texture :texture-2d (id texture2d)))
 
-(defun make-texture (filepath &optional (alpha t))
+(defun make-texture2d (filepath &optional (alpha t))
   (declare (boolean alpha))
-  (let ((texture (make-instance 'texture2d)))
-    (with-slots (internal-format image-format) texture
+  (let ((texture2d (make-instance 'texture2d)))
+    (with-slots (internal-format image-format) texture2d
       (when alpha
         (setf internal-format :rgba
               image-format :rgba))
@@ -68,6 +70,6 @@
              (image (first data))
              (width (second data))
              (height (third data)))
-        (texture2d-generate texture width height image)
+        (texture2d-generate texture2d width height image)
         (cl-soil:free-image-data image)))
-    texture))
+    texture2d))

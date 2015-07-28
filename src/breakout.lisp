@@ -8,8 +8,6 @@
    :breakout (make-instance 'game :width *width* :height *height*)))
 
 (defmethod window-cleanup ((window breakout-window))
-  (clear-resources *program-manager*)
-  (clear-resources *texture-manager*)
   t)
 
 (defmethod window-run ((window breakout-window))
@@ -46,9 +44,11 @@
         (game-process-input breakout *dt*)
         (game-update breakout *dt*)
 
-        (gl:clear-color 0.0 0.0 0.0 1.0)
-        (gl:clear :color-buffer-bit)
+        (gl:clear-color 1.0 0.0 0.0 1.0)
+        (gl:clear :color-buffer-bit :depth-buffer-bit)
+
         (game-render breakout)
+
         (glfw:swap-buffers))
 
       (window-cleanup window))))
