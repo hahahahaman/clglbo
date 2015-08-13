@@ -1,88 +1,86 @@
 ;;;; utils.lisp
 
+;;;; various utility functions
+
 (in-package #:clglbo)
 
-;; system stuff
+;;; system stuff
 (defun update-dt ()
+  "Called in the main loop, updates *dt* and *previous-time*"
   (setf *dt* (- (glfw:get-time) *previous-time*)
         *previous-time* (glfw:get-time)))
 
 (defun key-pressed-p (key)
+  "Returns T if KEY is found in *KEYS-PRESSED*, NIL otherwise."
   (not (eql (find key *keys-pressed*) nil)))
 
 ;; type utils
 (defun concat-vecs (&rest vecs)
-  (let* ((len 0)
-        (vec (apply #'concatenate 'vector
-                    (mapcar (lambda (x) (if (typep x 'sequence)
-                                            (progn
-                                              (incf len (length x))
-                                              x)
-                                            (progn
-                                              (incf len 1)
-                                              (list x))))
-                            vecs))))
+  "Creates of single-float simple-array from lone values, lists, and/or vectors."
+  (let* ((len 0) ;; keeps track of simple-array length
+         (vec (apply #'concatenate ;; combine all sequences, lists and vectors
+                     'vector ;; output a vector
+
+                     ;; ensure all of the elements of VECS are of type sequence
+                     (mapcar
+                      (lambda (x)
+                        (cond ((typep x 'sequence)
+                               (incf len (length x))
+                               x) ;; keep track of length
+                              (t
+                               (incf len 1)
+                               (list (coerce x 'single-float)))))
+                      vecs))))
+    ;; finally output simple-array
     (coerce vec `(simple-array single-float (,len)))))
 
 (defun sequence-to-gl-array (sequence type)
+  "Creates a gl-array from a lisp sequence, with elements of type TYPE.
+Remember to free gl-array afterwards."
   (let ((gl-arr (gl:alloc-gl-array type (length sequence))))
-    (dotimes (i (length sequence) gl-arr)
+    (dotimes (i (length sequence)
+                gl-arr)
       (setf (gl:glaref gl-arr i) (elt sequence i)))))
 
+(defmacro with-sequence-to-gl-array ((var sequence type) &body body)
+  `(let ((,var (sequence-to-gl-array ,sequence ,type)))
+     ,@body
+     (gl:free-gl-array ,var)))
+
 (defun cfloat (n)
+  "Coerce N to single-float. Just makes the function shorter."
   (coerce n 'single-float))
 
 (defun sizeof (type)
+  "Gives to foreign-type-size of TYPE. Used with cffi stuff, like opengl."
   (cffi-sys:%foreign-type-size type))
 
-(defun sizeof* (type multiply)
-  (* (sizeof type) multiply))
+(defun sizeof* (type multiple)
+  "Multiply sizeof TYPE, by MULTIPLE"
+  (* (sizeof type) multiple))
 
-;; file io
+;;; file io
 
-(defun read-entire-file (file)
-  "Returns a string with the text content of a file."
-  (let ((in (open file :if-does-not-exist nil))
-        (str ""))
-    (when in
-      (loop for line = (read-line in nil)
-            while line do (setf str (concatenate 'string str (format nil "~a~%" line))))
-      (close in)
-      (return-from read-entire-file str)))
-  (error "Unable to find file ~a.~%" file))
+(defun read-sexp-from-file (filename)
+  "Reads all sexp from file FILENAME, returning a list of all collected."
+  (with-open-file (file filename
+                        :direction :input
+                        :if-does-not-exist
+                        (error "Unable to find file ~a.~%" file))
+    (with-standard-io-syntax
+      (let ((*read-eval* nil))
+        (iter (for sexp = (read file nil))
+              (while sexp)
+              (collect sexp))))))
 
-;;glfw callback
-;;changes global variable
-
-(glfw:def-key-callback key-callback (window key scancode action mod-keys)
-  (declare (ignore window scancode mod-keys))
-  (when (and (eq key :escape) (eq action :press))
-    (glfw:set-window-should-close))
-  (when (eq action :press)
-    (pushnew key *keys-pressed*))
-  (when (eq action :release)
-    (alexandria:deletef *keys-pressed* key)))
-
-(glfw:def-mouse-button-callback mouse-callback (window button action mod-keys)
-  (declare (ignore window mod-keys))
-  (if (eq action :press)
-      (pushnew button *buttons-pressed*))
-  (when (eq action :release)
-    (alexandria:deletef *buttons-pressed* button)))
-
-(glfw:def-cursor-pos-callback cursor-callback (window x y)
-  (declare (ignore window))
-  (when *first-mouse*
-    (setf *last-x* x
-          *last-y* y
-          *first-mouse* nil))
-  (setf *cursor-callback-p* t
-        *cursor-x* x
-        *cursor-y* y))
-
-(glfw:def-scroll-callback scroll-callback (window x y)
-  (declare (ignore window))
-  ;; (process-mouse-scroll camera (cfloat y))
-  (setf *scroll-callback-p* t
-        *scroll-x* x
-        *scroll-y* y))
+(defun read-entire-file (filename)
+  "Returns a string with the entire content of a FILENAME, including whitespaces."
+  (with-open-file (file filename :direction :input)
+    (if file
+        (let ((str ""))
+          (iter
+            (for line = (read-line file nil nil))
+            (while line)
+            (setf str (concatenate 'string str (format nil "~a~%" line))))
+          str)
+        (error "Unable to open file ~a.~%" file))))

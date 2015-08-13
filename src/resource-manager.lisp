@@ -14,13 +14,15 @@
 (defclass texture-manager (resource-manager)
   ())
 
-(defgeneric load-resource (manager name resource))
-(defgeneric get-resource (manager name))
-(defgeneric clear-resources (manager))
+(defgeneric load-resource (manager name resource)
+  (:documentation "Loads RESOURCE into MANAGER. Can be retrieved with NAME."))
+(defgeneric get-resource (manager name)
+  (:documentation "Returns RESOURCE with key NAME, if it can be found, otherwise nil."))
+(defgeneric clear-resources (manager)
+  (:documentation "Cleans up all resources and empties RESOURCES."))
 
 (defmethod initialize-instance :after ((manager resource-manager) &key)
-  (trivial-garbage:finalize manager (lambda ()
-                                      (clear-resources manager))))
+  t)
 
 (defmethod load-resource ((manager resource-manager) name resource)
   (setf (gethash name (resources manager)) resource))

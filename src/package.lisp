@@ -1,6 +1,6 @@
 ;;;; package.lisp
 
 (defpackage #:clglbo
-  (:use #:cl #:iter)
+  (:use #:cl #:iter #:qua)
   (:export :clglbo))
 

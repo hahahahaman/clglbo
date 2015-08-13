@@ -9,23 +9,32 @@
     :initarg :id)
    (width
     :type unsigned-byte
+    :accessor width
     :initarg :width)
    (height
     :type unsigned-byte
+    :accessor height
     :initarg :height)
    (internal-format
+    :accessor internal-format
     :initarg :internal-format)
    (image-format
+    :accessor image-format
     :initarg :image-format)
    (wrap-s
+    :accessor wrap-s
     :initarg :wrap-s)
    (wrap-t
+    :accessor wrap-t
     :initarg :wrap-t)
    (filter-min
+    :accessor filter-min
     :initarg :filter-min)
    (filter-max
+    :accessor filter-max
     :initarg :filter-max))
   (:default-initargs
+   :id (elt (gl:gen-textures 1) 0)
    :width 0
    :height 0
    :internal-format :rgb
@@ -36,13 +45,14 @@
    :filter-max :linear))
 
 (defmethod initialize-instance :after ((tex texture2d) &key)
-  (setf (id tex) (elt (gl:gen-textures 1) 0)))
+  t)
 
-(defun texture2d-generate (texture2d tex-width tex-height image)
+(defmethod texture2d-generate ((tex texture2d) (tex-width fixnum)
+                               (tex-height fixnum) image)
   (with-slots (width height id
                wrap-s wrap-t
                filter-min filter-max
-               internal-format image-format) texture2d
+               internal-format image-format) tex
     (setf width tex-width
           height tex-height)
     (gl:bind-texture :texture-2d id)
@@ -55,14 +65,15 @@
     (gl:tex-parameter :texture-2d :texture-mag-filter filter-max)
     (gl:bind-texture :texture-2d 0)))
 
-(defun texture2d-bind (texture2d)
-  (declare (texture2d texture2d))
-  (gl:bind-texture :texture-2d (id texture2d)))
+(defmethod bind ((tex texture2d))
+  (gl:bind-texture :texture-2d (id tex)))
 
 (defun make-texture2d (filepath &optional (alpha t))
+  "Returns texture2d instance."
   (declare (boolean alpha))
   (let ((texture2d (make-instance 'texture2d)))
-    (with-slots (internal-format image-format) texture2d
+    (with-accessors ((internal-format internal-format)
+                     (image-format image-format)) texture2d
       (when alpha
         (setf internal-format :rgba
               image-format :rgba))

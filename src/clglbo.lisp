@@ -6,4 +6,4 @@
 
 (defun clglbo()
   (let ((breakout (make-instance 'breakout-window)))
-    (window-run breakout)))
+    (run breakout)))

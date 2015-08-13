@@ -5,7 +5,10 @@
 (defclass program ()
   ((id
     :type %gl:uint
-    :accessor id)))
+    :accessor id
+    :initarg :id))
+  (:default-initargs
+   :id 0))
 #|
 (defgeneric use (SHADER))
 (defgeneric compile (SHADER))
@@ -13,7 +16,16 @@
 (defgeneric get-uniform (SHADER NAME))
 |#
 
+(defmethod initialize-instance ((program program) &key)
+  (setf (id program) (gl:create-program))
+  t)
+
+(defmethod use ((program program))
+  (gl:use-program (id program)))
+
 (defun load-shader-file (filepath shader-type)
+  "Creates a compiled shader object of SHADER-TYPE using the file FILEPATH, if
+the shader did not compile an error is called."
   (let ((shader (gl:create-shader shader-type))
         (code (read-entire-file filepath))
         (status (cffi:foreign-alloc :int)))
@@ -38,15 +50,8 @@
           (cffi:foreign-free status)
           shader))))
 
-(defmethod initialize-instance ((program program) &key)
-  (setf (id program) (gl:create-program))
-  ;; (format t "gl:create-program, id : ~a~%" (id program)))
-   )
-
-(defun program-use (program)
-  (gl:use-program (id program)))
-
 (defun program-compile (program vert-path frag-path &optional (geo-path nil))
+  "Does not return any useful value, calls error is linking of program failed."
   (with-slots (id) program
     (let ((vert (load-shader-file vert-path :vertex-shader))
           (frag (load-shader-file frag-path :fragment-shader))
@@ -87,13 +92,15 @@
 
         (cffi:foreign-free status)))))
 
-(defun program-get-attrib (program name)
+(defun get-attrib (program name)
+  "Return attrib-location NAME from PROGRAM if found, or else it calls an error."
   (let ((attrib (gl:get-attrib-location (id program) name)))
     (if (eql attrib -1)
         (error "Program attribute not found: ~a~%" name)
         attrib)))
 
-(defun program-get-uniform (program name)
+(defun get-uniform (program name)
+  "Return uniform-location NAME from PROGRAM if found, else call error."
   (declare (program program) (string name))
   (let ((uniform (gl:get-uniform-location (id program) name)))
     (if (eql uniform -1)
@@ -101,6 +108,7 @@
         uniform)))
 
 (defun make-program (vert-path frag-path &optional (geo-path nil))
+  "Returns a new program instance."
   (let ((program (make-instance 'program)))
     (program-compile program vert-path frag-path geo-path)
     program))

@@ -3,15 +3,21 @@
 (defclass breakout-window (window)
   ((breakout
     :type game
+    :accessor breakout
     :initarg :breakout))
   (:default-initargs
    :breakout (make-instance 'game :width *width* :height *height*)))
 
-(defmethod window-cleanup ((window breakout-window))
+(defmethod cleanup ((window breakout-window))
+  (clear-resources *texture-manager*)
+  (clear-resources *program-manager*)
   t)
 
-(defmethod window-run ((window breakout-window))
-  (with-slots (title width height breakout) window
+(defmethod run ((window breakout-window))
+  (with-accessors ((title title)
+                   (width width)
+                   (height height)
+                   (breakout breakout)) window
     (glfw:with-init-window (:title title
                             :width width
                             :height height
@@ -31,24 +37,20 @@
 
       (unless (gl::features-present-p (>= :glsl-version 3.3))
         ;;destroys the window cuz of unwind-protect
-        (return-from window-run nil))
+        (return-from run nil))
 
       (gl:enable :blend :depth-test)
       (gl:blend-func :src-alpha :one-minus-src-alpha)
 
-      (game-init breakout)
+      (init breakout)
 
       (iter (until (glfw:window-should-close-p))
         (update-dt)
         (glfw:poll-events)
-        (game-process-input breakout *dt*)
-        (game-update breakout *dt*)
 
-        (gl:clear-color 1.0 0.0 0.0 1.0)
-        (gl:clear :color-buffer-bit :depth-buffer-bit)
-
-        (game-render breakout)
+        (render breakout)
+        (update breakout)
 
         (glfw:swap-buffers))
 
-      (window-cleanup window))))
+      (cleanup window))))
