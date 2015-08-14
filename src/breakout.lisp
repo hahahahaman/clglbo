@@ -27,27 +27,28 @@
                             :context-version-minor 3
                             :resizable nil)
       (setf %gl:*gl-get-proc-address* #'glfw:get-proc-address)
-      (glfw:set-key-callback 'key-callback)
-      (glfw:set-mouse-button-callback 'mouse-callback)
-      (glfw:set-cursor-position-callback 'cursor-callback)
-      (glfw:set-scroll-callback 'scroll-callback)
-      ;; (glfw:set-input-mode :cursor :disabled)
-
       ;; initialize
 
       (unless (gl::features-present-p (>= :glsl-version 3.3))
         ;;destroys the window cuz of unwind-protect
         (return-from run nil))
 
+      (init breakout)
+
       (gl:enable :blend :depth-test)
       (gl:blend-func :src-alpha :one-minus-src-alpha)
 
-      (init breakout)
+      (glfw:set-key-callback 'key-callback)
+      (glfw:set-mouse-button-callback 'mouse-callback)
+      (glfw:set-cursor-position-callback 'cursor-callback)
+      (glfw:set-scroll-callback 'scroll-callback)
+      ;; (glfw:set-input-mode :cursor :disabled)
 
       (iter (until (glfw:window-should-close-p))
-        (update-dt)
+        (update-globals)
         (glfw:poll-events)
 
+        (handle-input breakout)
         (render breakout)
         (update breakout)
 

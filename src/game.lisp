@@ -63,7 +63,7 @@
                              ;;                               100.0))
                              nil))
 
-    ;; qua relate stuff
+    ;; qua related stuff
     (let ((e (make-entity world))
           (pos (make-position-component :vec (kit.glm:vec2 100.0 200.0)))
           (render (make-render-component :sprite (get-resource *texture-manager* "face")
@@ -75,8 +75,14 @@
       (add-systems world render-sys)
       (system-add-entities world render-sys e))))
 
-(defmethod process-input ((game game))
-  t)
+(defmethod handle-input ((game game))
+  ;; keys
+  (cond ((key-action-p :escape :press)
+         (glfw:set-window-should-close)))
+
+  ;; mouse buttons
+  (cond ((mouse-button-action-p :left :press)
+         (setf *paused* (not *paused*)))))
 
 (defmethod update ((game game))
   (let ((pos-comp (entity-component (world game) 0 'position-component))
@@ -87,18 +93,11 @@
           ;; (kit.glm:vec2 100.0 100.0)
           (render-component-size rend-comp) (kit.glm:vec2 100.0 100.0)
           (render-component-color rend-comp) (kit.glm:vec4 0.0 0.0 1.0 1.0)))
-  (update-world (world game) *dt*))
+
+  (when (not *paused*)
+      (update-world (world game) *dt*)))
 
 (defmethod render ((game game))
-  (gl:clear-color 0.0 0.0 0.0 1.0)
-  (gl:clear :color-buffer-bit :depth-buffer-bit)
-  ;; (sprite-render *sprite-renderer*
-  ;;                (test-get-resource)
-  ;;                (kit.glm:vec2 100.0 400.0)
-  ;;                (kit.glm:vec2 200.0 300.0)
-  ;;                (kit.glm:deg-to-rad 40.0)
-  ;;                (kit.glm:vec3 1.0 1.0 0.0))
-  )
-
-(defun test-get-resource ()
-  (get-resource *texture-manager* "face"))
+  (when (not *paused*)
+    (gl:clear-color 0.0 0.0 0.0 1.0)
+    (gl:clear :color-buffer-bit :depth-buffer-bit)))

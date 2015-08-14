@@ -4,17 +4,33 @@
 
 (in-package #:clglbo)
 
-;;; system stuff
+;;; global system specific
+(defun clear-actions ()
+  "Clears the input actions from last frame."
+  (setf *key-actions* nil
+        *mouse-button-actions* nil))
 (defun update-dt ()
   "Called in the main loop, updates *dt* and *previous-time*"
   (setf *dt* (- (glfw:get-time) *previous-time*)
         *previous-time* (glfw:get-time)))
+(defun update-globals ()
+  "A single function that encompasses global updates"
+  (clear-actions)
+  (update-dt))
 
-(defun key-pressed-p (key)
-  "Returns T if KEY is found in *KEYS-PRESSED*, NIL otherwise."
-  (not (eql (find key *keys-pressed*) nil)))
+(defun key-action-p (key action)
+  "Returns true if KEY is in *key-actions* and its state is EQ to ACTION."
+  (let ((state (getf *key-actions* key)))
+    (and (not (null state)) ;; if STATE is not null then key must have been found
+         (eq action state))))
 
-;; type utils
+(defun mouse-button-action-p (button action)
+  "Returns true if KEY is in *mouse-button-actions* and its state is EQ to ACTION."
+  (let ((state (getf *mouse-button-actions* button)))
+    (and (not (null state)) ;; if STATE is not null then button be active
+         (eq action state))))
+
+;;; type utils
 (defun concat-vecs (&rest vecs)
   "Creates of single-float simple-array from lone values, lists, and/or vectors."
   (let* ((len 0) ;; keeps track of simple-array length

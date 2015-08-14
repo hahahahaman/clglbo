@@ -16,7 +16,7 @@
                 :components ((:file "package")
                              (:file "globals")
                              (:file "utils")
-                             (:file "utils-glfw-callback")
+                             (:file "input")
                              (:file "program")
                              (:file "texture")
                              (:file "resource-manager")

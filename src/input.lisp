@@ -1,31 +1,32 @@
-;;;; utils-glfw-callback.lisp
+;;;; input.lisp
 
-;;;; glfw callback
-;;;; changes global variables when glfw action is recorded
 
 (in-package #:clglbo)
+
+;;; glfw callback
+;;; changes global variables when glfw action is recorded
 
 ;; keys pressed
 (glfw:def-key-callback key-callback (window key scancode action mod-keys)
   (declare (ignore window scancode mod-keys))
-  (cond
-    ;; close window when ESC pressed
-    ((and (eq key :escape) (eq action :press))
-     (glfw:set-window-should-close))
-    ;;when something pressed, put key into *keys-pressed*
-    ((eq action :press)
-     (pushnew key *keys-pressed*))
-    ;; when key is released remove from key from *keys-pressed*
-    ((eq action :release)
-     (alexandria:deletef *keys-pressed* key))))
+  (setf (getf *key-actions* key) action)
+  ;; (print *key-actions*)
+  ;; (cond ((eq action :press)
+  ;;        (setf (getf *key-actions* key) :press))
+  ;;       ((eq action :release)
+  ;;        (setf (getf *key-actions* key) :release)))
+  )
 
 ;; mouse button pressed
 (glfw:def-mouse-button-callback mouse-callback (window button action mod-keys)
   (declare (ignore window mod-keys))
-  (cond ((eq action :press)
-         (pushnew button *buttons-pressed*))
-        ((eq action :release)
-          (alexandria:deletef *buttons-pressed* button))))
+  (setf (getf *mouse-button-actions* button) action)
+  ;; (print *mouse-button-actions*)
+  ;; (cond ((eq action :press)
+        ;;  (setf (getf *mouse-button-actions* button) :press))
+        ;; ((eq action :release)
+        ;;  (setf (getf *mouse-button-actions* button) :release)))
+  )
 
 ;; cursor movement
 (glfw:def-cursor-pos-callback cursor-callback (window x y)
