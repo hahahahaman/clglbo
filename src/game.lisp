@@ -17,6 +17,12 @@
    (height
     :initarg :height
     :reader height)
+   (levels
+    :initarg :levels
+    :accessor levels)
+   (current-level
+    :initarg :current-level
+    :accessor current-level)
    (world
     :type world
     :accessor world
@@ -25,7 +31,9 @@
    :state +game-active+
    :width *width*
    :height *height*
-   :world (make-world)))
+   :world (make-world)
+   :levels nil
+   :current-level 3))
 
 ;; (defgeneric game-process-input (game dt))
 ;; (defgeneric game-update (game dt))
@@ -33,16 +41,82 @@
 ;; (defgeneric game-init (game))
 
 (defmethod init ((game game))
-  (with-accessors ((width width) (height height) (world world)) game
+  (with-accessors ((width width) (height height) (world world)
+                   (levels levels) (current-level current-level)) game
     (let ((program (make-program #p"./data/shaders/sprite.v.glsl"
                                  #p"./data/shaders/sprite.f.glsl")))
       (setf *program-manager* (make-instance 'program-manager)
             *texture-manager* (make-instance 'texture-manager)
             *sprite-renderer* (make-instance 'sprite-renderer :program program))
       (load-resource *program-manager* "sprite" program)
+
+      ;; textures
       (load-resource *texture-manager*
                      "face"
                      (make-texture2d "./data/images/awesomeface.png" t))
+      (load-resource *texture-manager*
+                     "background"
+                     (make-texture2d "./data/images/background.jpg" nil))
+      (load-resource *texture-manager*
+                     "block"
+                     (make-texture2d "./data/images/block.png" nil))
+      (load-resource *texture-manager*
+                     "block-solid"
+                     (make-texture2d "./data/images/block_solid.png" nil))
+
+      ;; levels
+
+      (flet ((make-level (filename world level-width level-height)
+               (with-open-file (file filename :direction :input)
+                 (if file
+                     (let* ((level (make-instance 'level :world world))
+                            (file-data (read file))
+                            (width (getf file-data :width))
+                            (height (getf file-data :height))
+                            (data (getf file-data :data))
+                            (unit-width (cfloat (/ level-width width)))
+                            (unit-height (cfloat (/ level-height height))))
+                       (iter (for i from 0 below height)
+                         (iter (for j from 0 below width)
+                           (let ((brick (elt data (+ (* i width) j))))
+                             (when (> brick 0)
+                               (let ((pos-comp (make-position-component
+                                                :vec (kit.glm:vec2 (* unit-width j)
+                                                                   (- *height* (* unit-height i)))))
+                                     (size-comp (make-size-component
+                                                 :vec (kit.glm:vec2 unit-width unit-height)))
+                                     (rend-comp (make-render-component
+                                                 :sprite (cond ((= brick 1)
+                                                                (get-resource *texture-manager* "block-solid"))
+                                                               (t
+                                                                (get-resource *texture-manager* "block")))
+                                                 :color (case brick
+                                                          (1 (kit.glm:vec4 0.8 0.8 0.7 1.0))
+                                                          (2 (kit.glm:vec4 0.2 0.6 1.0 1.0))
+                                                          (3 (kit.glm:vec4 0.0 0.7 0.0 1.0))
+                                                          (4 (kit.glm:vec4 0.8 0.8 0.4 1.0))
+                                                          (5 (kit.glm:vec4 1.0 0.5 0.0 1.0)))
+                                                 :rotation 0.0))
+                                     (phy-comp (make-physics-component
+                                                :acceleration 0.0
+                                                :velocity 0.0
+                                                :collision-type :aabb))
+                                     (state-comp (make-state-component :solid-p (= brick 1))))
+                                 (vector-push-extend (make-instance 'object
+                                                                    :id -1
+                                                                    :position-component pos-comp
+                                                                    :size-component size-comp
+                                                                    :render-component rend-comp
+                                                                    :physics-component phy-comp
+                                                                    :state-component state-comp)
+                                                     (bricks level)))))))
+                       level)
+                     (error "~a could not be opened.~%" filename)))))
+        (setf levels (list (make-level "./data/levels/one" world width (* height 0.5))
+
+                           (make-level "./data/levels/two" world width (* height 0.5))
+                           (make-level "./data/levels/three" world width (* height 0.5))
+                           (make-level "./data/levels/four" world width (* height 0.5)))))
 
       ;;use current program
       (use program)
@@ -52,11 +126,13 @@
 
       ;; set projection matrix
       (gl:uniform-matrix-4fv (get-uniform program "projection")
-                             (vector (kit.glm:ortho-matrix 0.0
-                                                           (cfloat (width game))
-                                                           (cfloat (height game))
-                                                           0.0
-                                                           -1.0 1.0))
+                             (vector
+                              ;; left, right, bottom, top, near, far
+                              (kit.glm:ortho-matrix 0.0
+                                                    (cfloat (width game))
+                                                    0.0
+                                                    (cfloat (height game))
+                                                    -1.0 1.0))
                              ;; (vector (kit.math:perspective-matrix (kit.glm:deg-to-rad 45.0)
                              ;;                               (cfloat (/ *width* *height*))
                              ;;                               -2.1
@@ -64,16 +140,20 @@
                              nil))
 
     ;; qua related stuff
-    (let ((e (make-entity world))
-          (pos (make-position-component :vec (kit.glm:vec2 100.0 200.0)))
-          (render (make-render-component :sprite (get-resource *texture-manager* "face")
-                                         :color (kit.glm:vec4 1.0 1.0 1.0 1.0)
-                                         :rotation (kit.glm:deg-to-rad 40.0)
-                                         :size (kit.glm:vec2 200.0 300.0)))
-          (render-sys (make-instance 'render-system)))
-      (add-components world e pos render)
-      (add-systems world render-sys)
-      (system-add-entities world render-sys e))))
+    ;; (let ((e (make-entity world))
+    ;;       (pos (make-position-component :vec (kit.glm:vec2 100.0 200.0)))
+    ;;       (size (make-size-component :vec (kit.glm:vec2 200.0 300.0)))
+    ;;       (render (make-render-component :sprite (get-resource *texture-manager* "face")
+    ;;                                      :color (kit.glm:vec4 1.0 1.0 1.0 1.0)
+    ;;                                      :rotation (kit.glm:deg-to-rad 40.0)))
+    ;;       (render-sys (make-instance 'render-system)))
+    ;;   (add-components world e pos size render)
+    ;;   (add-systems world render-sys)
+    ;;   (system-add-entities world render-sys e))
+    (load-level (elt levels current-level))
+    (let ((render-sys (make-instance 'render-system)))
+      (add-systems world render-sys))
+    (initialize-systems world)))
 
 (defmethod handle-input ((game game))
   ;; keys
@@ -85,19 +165,30 @@
          (setf *paused* (not *paused*)))))
 
 (defmethod update ((game game))
-  (let ((pos-comp (entity-component (world game) 0 'position-component))
-        (rend-comp (entity-component (world game) 0 'render-component)))
-    (setf (position-component-vec pos-comp)
-          (kit.glm:vec2 (cfloat (+ 300 (* 200 (sin (glfw:get-time)))))
-                        (cfloat (+ 200 (* 200 (cos (glfw:get-time))))))
-          ;; (kit.glm:vec2 100.0 100.0)
-          (render-component-size rend-comp) (kit.glm:vec2 100.0 100.0)
-          (render-component-color rend-comp) (kit.glm:vec4 0.0 0.0 1.0 1.0)))
+  ;; (let ((pos-comp (entity-component (world game) 0 'position-component))
+  ;;       (size-comp (entity-component (world game) 0 'size-component))
+  ;;       (rend-comp (entity-component (world game) 0 'render-component)))
+  ;;   (setf (position-component-vec pos-comp)
+  ;;         (kit.glm:vec2 (cfloat (+ 300 (* 200 (sin (glfw:get-time)))))
+  ;;                       (cfloat (+ 200 (* 200 (cos (glfw:get-time))))))
+  ;;         ;; (kit.glm:vec2 100.0 100.0)
+  ;;         (size-component-vec size-comp) (kit.glm:vec2 100.0 100.0)
+  ;;         (render-component-color rend-comp) (kit.glm:vec4 0.0 0.0 1.0 1.0)))
 
-  (when (not *paused*)
-      (update-world (world game) *dt*)))
-
-(defmethod render ((game game))
   (when (not *paused*)
     (gl:clear-color 0.0 0.0 0.0 1.0)
-    (gl:clear :color-buffer-bit :depth-buffer-bit)))
+    (gl:clear  :depth-buffer-bit)
+
+    ;; background
+    (update-world (world game) *dt*)
+
+    ;; update qua world
+    (sprite-render *sprite-renderer* (get-resource *texture-manager* "background")
+                   (kit.glm:vec2 0.0 0.0)
+                   (kit.glm:vec2 (cfloat (width game)) (cfloat (height game)))
+                   0.0
+                   (kit.glm:vec4 1.0 1.0 1.0 1.0))))
+
+(defmethod render ((game game))
+  )
+

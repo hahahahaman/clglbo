@@ -30,13 +30,10 @@
       (gl:bind-buffer :array-buffer vbo)
       (with-sequence-to-gl-array (verts
                                   ;;      Pos     Tex
-                                  (vector 0.0 1.0 0.0 1.0
-                                          1.0 0.0 1.0 0.0
-                                          0.0 0.0 0.0 0.0
-
-                                          0.0 1.0 0.0 1.0
-                                          1.0 1.0 1.0 1.0
-                                          1.0 0.0 1.0 0.0)
+                                  (vector 0.0 0.0 0.0 0.0
+                                          1.0 0.0 -1.0 0.0
+                                          0.0 1.0 0.0 -1.0
+                                          1.0 1.0 -1.0 -1.0)
                                   :float)
           (gl:buffer-data :array-buffer :static-draw verts))
 
@@ -83,5 +80,5 @@
 
     ;; draw
     (gl:bind-vertex-array vao)
-    (gl:draw-arrays :triangles 0 6)
+    (gl:draw-arrays :triangle-strip 0 4)
     (gl:bind-vertex-array 0)))

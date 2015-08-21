@@ -1,8 +1,8 @@
 ;;;; clglbo.asd
 
 (asdf:defsystem #:clglbo
-  :description "Describe clglbo here"
-  :author "Ed Ye <hahahadude@gmail.com>"
+  :description "breakout?"
+  :author "hahahahaman <hahahadude@gmail.com>"
   :license "Licenceless Rider"
   :depends-on (#:cl-opengl
                #:cl-glfw3
@@ -23,6 +23,8 @@
                              (:file "sprite-renderer")
                              (:file "components")
                              (:file "systems")
+                             (:file "object")
+                             (:file "level")
                              (:file "game")
                              (:file "window")
                              (:file "breakout")

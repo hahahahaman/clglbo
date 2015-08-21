@@ -27,12 +27,13 @@
                             :context-version-minor 3
                             :resizable nil)
       (setf %gl:*gl-get-proc-address* #'glfw:get-proc-address)
-      ;; initialize
 
+      ;; initialize
       (unless (gl::features-present-p (>= :glsl-version 3.3))
         ;;destroys the window cuz of unwind-protect
         (return-from run nil))
 
+      (initialize-globals)
       (init breakout)
 
       (gl:enable :blend :depth-test)
@@ -46,10 +47,11 @@
 
       (iter (until (glfw:window-should-close-p))
         (update-globals)
+
         (glfw:poll-events)
 
         (handle-input breakout)
-        (render breakout)
+        ;; (render breakout)
         (update breakout)
 
         (glfw:swap-buffers))

@@ -33,6 +33,10 @@
 (defparameter *texture-manager* nil)
 (defparameter *sprite-renderer* nil)
 
+;;systems
+(defparameter *render-system* nil)
+(defparameter *physics-system* nil)
+
 ;;; cursor position values
 (defparameter *cursor-callback-p* nil) ;; cursor has been moved
 (defparameter *first-mouse* t) ;; checks if first time cursor has been moved

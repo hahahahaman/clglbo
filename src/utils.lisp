@@ -12,11 +12,30 @@
 (defun update-dt ()
   "Called in the main loop, updates *dt* and *previous-time*"
   (setf *dt* (- (glfw:get-time) *previous-time*)
-        *previous-time* (glfw:get-time)))
+        *previous-time* (glfw:get-time))
+
+  ;; prevent unruly time steps from breaking game
+  (when (> *dt* 0.25) (setf *dt* 0.25)))
+
 (defun update-globals ()
   "A single function that encompasses global updates"
   (clear-actions)
   (update-dt))
+
+(defun initialize-globals ()
+  (setf *dt* 0.0
+        *previous-time* 0.0
+        *cursor-callback-p* nil
+        *scroll-callback-P* nil
+        *cursor-x* (/ *width* 2.0)
+        *cursor-y* (/ *height* 2.0)
+        *scroll-x* (/ *width* 2.0)
+        *scroll-y* (/ *height* 2.0)
+        *last-x* (/ *width* 2.0)
+        *last-y* (/ *height* 2.0)
+        *first-mouse* t
+        *paused* nil
+        *debug* nil))
 
 (defun key-action-p (key action)
   "Returns true if KEY is in *key-actions* and its state is EQ to ACTION."
@@ -90,7 +109,8 @@ Remember to free gl-array afterwards."
               (collect sexp))))))
 
 (defun read-entire-file (filename)
-  "Returns a string with the entire content of a FILENAME, including whitespaces."
+  "DEPRECATED. Returns a string with the entire content of a FILENAME, including
+whitespaces."
   (with-open-file (file filename :direction :input)
     (if file
         (let ((str ""))

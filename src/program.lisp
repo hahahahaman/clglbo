@@ -27,7 +27,7 @@
   "Creates a compiled shader object of SHADER-TYPE using the file FILEPATH, if
 the shader did not compile an error is called."
   (let ((shader (gl:create-shader shader-type))
-        (code (read-entire-file filepath))
+        (code (alexandria:read-file-into-string filepath))
         (status (cffi:foreign-alloc :int)))
     (gl:shader-source shader code)
     (gl:compile-shader shader)
