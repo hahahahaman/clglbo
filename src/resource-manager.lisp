@@ -28,7 +28,10 @@
   (setf (gethash name (resources manager)) resource))
 
 (defmethod get-resource ((manager resource-manager) name)
-  (gethash name (resources manager)))
+  (let ((resource (gethash name (resources manager))))
+    (if resource
+        resource
+        (warn "\"~a\" not found in ~a.~%" name manager))))
 
 (defmethod clear-resources ((manager resource-manager))
   (setf (resources manager) (make-hash-table)))

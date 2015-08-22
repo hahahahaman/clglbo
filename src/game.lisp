@@ -33,7 +33,7 @@
    :height *height*
    :world (make-world)
    :levels nil
-   :current-level 3))
+   :current-level 0))
 
 ;; (defgeneric game-process-input (game dt))
 ;; (defgeneric game-update (game dt))
@@ -63,61 +63,13 @@
       (load-resource *texture-manager*
                      "block-solid"
                      (make-texture2d "./data/images/block_solid.png" nil))
+      (setf levels (list (make-level "./data/levels/one" world width (* height 0.5))
+                         (make-level "./data/levels/two" world width (* height 0.5))
+                         (make-level "./data/levels/three" world width (* height 0.5))
+                         (make-level "./data/levels/four" world width (* height 0.5))))
+      ;; (print (foo*))
 
-      ;; levels
-
-      (flet ((make-level (filename world level-width level-height)
-               (with-open-file (file filename :direction :input)
-                 (if file
-                     (let* ((level (make-instance 'level :world world))
-                            (file-data (read file))
-                            (width (getf file-data :width))
-                            (height (getf file-data :height))
-                            (data (getf file-data :data))
-                            (unit-width (cfloat (/ level-width width)))
-                            (unit-height (cfloat (/ level-height height))))
-                       (iter (for i from 0 below height)
-                         (iter (for j from 0 below width)
-                           (let ((brick (elt data (+ (* i width) j))))
-                             (when (> brick 0)
-                               (let ((pos-comp (make-position-component
-                                                :vec (kit.glm:vec2 (* unit-width j)
-                                                                   (- *height* (* unit-height i)))))
-                                     (size-comp (make-size-component
-                                                 :vec (kit.glm:vec2 unit-width unit-height)))
-                                     (rend-comp (make-render-component
-                                                 :sprite (cond ((= brick 1)
-                                                                (get-resource *texture-manager* "block-solid"))
-                                                               (t
-                                                                (get-resource *texture-manager* "block")))
-                                                 :color (case brick
-                                                          (1 (kit.glm:vec4 0.8 0.8 0.7 1.0))
-                                                          (2 (kit.glm:vec4 0.2 0.6 1.0 1.0))
-                                                          (3 (kit.glm:vec4 0.0 0.7 0.0 1.0))
-                                                          (4 (kit.glm:vec4 0.8 0.8 0.4 1.0))
-                                                          (5 (kit.glm:vec4 1.0 0.5 0.0 1.0)))
-                                                 :rotation 0.0))
-                                     (phy-comp (make-physics-component
-                                                :acceleration 0.0
-                                                :velocity 0.0
-                                                :collision-type :aabb))
-                                     (state-comp (make-state-component :solid-p (= brick 1))))
-                                 (vector-push-extend (make-instance 'object
-                                                                    :id -1
-                                                                    :position-component pos-comp
-                                                                    :size-component size-comp
-                                                                    :render-component rend-comp
-                                                                    :physics-component phy-comp
-                                                                    :state-component state-comp)
-                                                     (bricks level)))))))
-                       level)
-                     (error "~a could not be opened.~%" filename)))))
-        (setf levels (list (make-level "./data/levels/one" world width (* height 0.5))
-
-                           (make-level "./data/levels/two" world width (* height 0.5))
-                           (make-level "./data/levels/three" world width (* height 0.5))
-                           (make-level "./data/levels/four" world width (* height 0.5)))))
-
+      ;; (print levels)
       ;;use current program
       (use program)
 
@@ -177,18 +129,31 @@
 
   (when (not *paused*)
     (gl:clear-color 0.0 0.0 0.0 1.0)
-    (gl:clear  :depth-buffer-bit)
+    (gl:clear :color-buffer-bit :depth-buffer-bit)
 
-    ;; background
-    (update-world (world game) *dt*)
+    (sprite-render *sprite-renderer* (get-resource *texture-manager* "block-solid")
+                   (kit.glm:vec2 (random 800.0) (random 600.0))
+                   (kit.glm:vec2 100.0 100.0)
+                   0.0
+                   (kit.glm:vec4 1.0 1.0 1.0 1.0))
 
     ;; update qua world
-    (sprite-render *sprite-renderer* (get-resource *texture-manager* "background")
-                   (kit.glm:vec2 0.0 0.0)
-                   (kit.glm:vec2 (cfloat (width game)) (cfloat (height game)))
-                   0.0
-                   (kit.glm:vec4 1.0 1.0 1.0 1.0))))
+    (update-world (world game) *dt*)
+
+    ;; background
+    ;; (sprite-render *sprite-renderer* (get-resource *texture-manager* "background")
+    ;;                (kit.glm:vec2 0.0 0.0)
+    ;;                (kit.glm:vec2 (cfloat (width game)) (cfloat (height game)))
+    ;;                0.0
+    ;;                (kit.glm:vec4 1.0 1.0 1.0 1.0))
+    ))
 
 (defmethod render ((game game))
   )
 
+;; (eval-when (:compile-toplevel)
+;;   (print "compile-toplevel"))
+;; (eval-when (:load-toplevel)
+;;   (print "load-toplevel"))
+;; (eval-when (:execute)
+;;   (print "execute"))
