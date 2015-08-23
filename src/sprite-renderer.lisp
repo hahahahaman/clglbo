@@ -57,7 +57,7 @@
     (gl:uniformfv (get-uniform program "spriteColor") color)
     (let ((model (kit.glm:matrix*
                   ;;finally move to POSITION
-                  (kit.glm:translate (concat-vecs position 0.0))
+                  (kit.glm:translate (kit.glm:vec3 (aref position 0) (aref position 1) 0.0))
                   ;; move top left to 0.0, 0.0
                   (kit.glm:translate* (cfloat (* 0.5 (aref size 0)))
                                       (cfloat (* 0.5 (aref size 1)))
@@ -69,7 +69,7 @@
                                       (cfloat (* -0.5 (aref size 1)))
                                       0.0)
                   ;; scale first, z axis remain constant since 2d
-                  (kit.glm:scale (concat-vecs size 1.0)))))
+                  (kit.glm:scale (kit.glm:vec3 (aref size 0) (aref size 1) 0.0)))))
 
       ;; set model uniform
       (gl:uniform-matrix-4fv (get-uniform program "model") (vector model) nil))

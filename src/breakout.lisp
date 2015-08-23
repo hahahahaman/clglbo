@@ -36,7 +36,8 @@
       (initialize-globals)
       (init breakout)
 
-      (gl:enable :blend :depth-test)
+      (gl:enable :blend)
+      (gl:disable :depth-test)
       (gl:blend-func :src-alpha :one-minus-src-alpha)
 
       (glfw:set-key-callback 'key-callback)

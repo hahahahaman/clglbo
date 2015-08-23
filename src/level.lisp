@@ -31,14 +31,13 @@
                  (data (getf file-data :data))
                  (unit-width (cfloat (/ ,level-width width)))
                  (unit-height (cfloat (/ ,level-height height))))
-            (format t "~a, ~a~%" width ,level-width)
             (iter (for i from 0 below height)
               (iter (for j from 0 below width)
                 (let ((brick (elt data (+ (* i width) j))))
                   (when (> brick 0)
                     (let ((pos-comp (make-position-component
                                      :vec (kit.glm:vec2 (* unit-width j)
-                                                        (- *height* (* unit-height i)))))
+                                                        (- *height* (* unit-height (1+ i))))))
                           (size-comp (make-size-component
                                       :vec (kit.glm:vec2 unit-width unit-height)))
                           (rend-comp (make-render-component

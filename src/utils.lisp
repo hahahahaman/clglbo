@@ -43,6 +43,9 @@
     (and (not (null state)) ;; if STATE is not null then key must have been found
          (eq action state))))
 
+(defun key-down-p (key)
+  (or (key-action-p key :press) (key-action-p key :repeat)))
+
 (defun mouse-button-action-p (button action)
   "Returns true if KEY is in *mouse-button-actions* and its state is EQ to ACTION."
   (let ((state (getf *mouse-button-actions* button)))
