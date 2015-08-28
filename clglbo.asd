@@ -23,7 +23,6 @@
                              (:file "sprite-renderer")
                              (:file "components")
                              (:file "systems")
-                             (:file "object")
                              (:file "level")
                              (:file "game")
                              (:file "window")

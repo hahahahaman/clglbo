@@ -4,8 +4,16 @@
 
 (defstruct size-component vec)
 
-(defstruct physics-component acceleration velocity collision-type)
+(defstruct move-componenet accel vel)
+
+(defstruct physics-component collision-obj)
 
 (defstruct render-component sprite color rotation)
 
-(defstruct state-component solid-p destroyed-p)
+(defstruct input-component)
+
+(defstruct brick-component solid-p)
+
+(defstruct ball-component)
+
+(defstruct player-component)
