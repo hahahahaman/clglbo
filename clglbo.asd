@@ -7,6 +7,7 @@
   :depends-on (#:cl-opengl
                #:cl-glfw3
                #:cl-soil
+               #:fset
                #:glkit
                #:trivial-garbage
                #:defenum
@@ -23,6 +24,8 @@
                              (:file "sprite-renderer")
                              (:file "components")
                              (:file "systems")
+                             (:file "clump")
+                             (:file "clump-objects")
                              (:file "level")
                              (:file "game")
                              (:file "window")

@@ -9,8 +9,8 @@
    :breakout (make-instance 'game :width *width* :height *height*)))
 
 (defmethod cleanup ((window breakout-window))
-  (clear-resources *texture-manager*)
   (clear-resources *program-manager*)
+  (clear-resources *texture-manager*)
   t)
 
 (defmethod run ((window breakout-window))
@@ -25,7 +25,13 @@
                             :opengl-profile :opengl-core-profile
                             :context-version-major 3
                             :context-version-minor 3
-                            :resizable nil)
+                            :decorated t
+                            :resizable nil
+                            ;;full screen mode
+                            ;; :monitor (glfw:get-primary-monitor)
+                            ;; :refresh-rate 60
+                            )
+      ;; (glfw:swap-interval 1)
       (setf %gl:*gl-get-proc-address* #'glfw:get-proc-address)
 
       ;; initialize
@@ -47,14 +53,17 @@
       ;; (glfw:set-input-mode :cursor :disabled)
 
       (iter (until (glfw:window-should-close-p))
-        (update-globals)
+        (update-swank)
+        ;; give some fps data in title
+        (update-window-title cl-glfw3:*window* title)
 
         (glfw:poll-events)
 
         (handle-input breakout)
-        ;; (render breakout)
+        (render breakout)
         (update breakout)
 
-        (glfw:swap-buffers))
+        (glfw:swap-buffers)
+        (update-globals))
 
       (cleanup window))))

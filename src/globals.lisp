@@ -2,56 +2,70 @@
 
 (in-package #:clglbo)
 
+(defvar *global-setfs* nil)
+
+(defmacro defglobal (var &optional (val nil valp) (doc nil docp))
+  (append `(progn)
+          (if (and valp docp)
+              `((defvar ,var ,val ,doc))
+              `((defvar ,var ,val)))
+          `((setf (getf *global-setfs* (intern (string ',var) :keyword))
+                  (lambda () (setf ,var ,val))))))
+
 ;;; modes
 
 ;; debug mode, default nil
-(defparameter *debug* nil)
+(defglobal *debug* nil)
 ;; paused
-(defparameter *paused* nil)
+(defglobal *paused* nil)
 
 ;;; screen constants
 ;; not really much use, just keeps value holders
-(defparameter *width* 800)
-(defparameter *height* 600)
+(defglobal *width* 800)
+(defglobal *height* 600)
 
 ;;; delta time
 ;; *DT* keeps track of the time since last frame, in seconds
 ;; *PREVIOUS-TIME* gives the time, in seconds, of the previous frame
 ;; since the start of the program, and (glfw:get-time) returns the
 ;; current time
-(defparameter *dt* 0.0)
-(defparameter *previous-time* 0.0)
+(defconstant +max-fps+ 150)
+(defglobal *dt* 0.02d0)
+(defglobal *previous-time* 0.0)
+
+;; (defglobal *previous-dt* 0.01)
+;; (defglobal *average-dt* 0.01)
 
 ;;; actions
 ;; p-lists that keep track of the current actions on keys and buttons
-(defparameter *key-actions* ())
-(defparameter *mouse-button-actions* ())
+(defglobal *key-actions* ())
+(defglobal *mouse-button-actions* ())
 
 ;;; singletons
 ;; singletons used for resource management and rendering
-(defparameter *program-manager* nil)
-(defparameter *texture-manager* nil)
-(defparameter *sprite-renderer* nil)
+(defglobal *program-manager* nil)
+(defglobal *texture-manager* nil)
+(defglobal *sprite-renderer* nil)
 
 ;;systems
-(defparameter *render-system* nil)
-(defparameter *physics-system* nil)
+(defglobal *render-system* nil)
+(defglobal *physics-system* nil)
 
 ;;; cursor position values
-(defparameter *cursor-callback-p* nil) ;; cursor has been moved
-(defparameter *first-mouse* t) ;; checks if first time cursor has been moved
+(defglobal *cursor-callback-p* nil) ;; cursor has been moved
+(defglobal *first-mouse* t) ;; checks if first time cursor has been moved
 
 ;; current cursor position
-(defparameter *cursor-x* (/ *width* 2.0))
-(defparameter *cursor-y* (/ *height* 2.0))
+(defglobal *cursor-x* (/ *width* 2.0))
+(defglobal *cursor-y* (/ *height* 2.0))
 
 ;; previous cursor position
-(defparameter *last-x* (/ *width* 2.0))
-(defparameter *last-y* (/ *height* 2.0))
+(defglobal *last-x* (/ *width* 2.0))
+(defglobal *last-y* (/ *height* 2.0))
 
 ;; the scroll wheel has been used
-(defparameter *scroll-callback-p* nil)
+(defglobal *scroll-callback-p* nil)
 
 ;; number of ticks of the scroll wheel
-(defparameter *scroll-x* (/ *width* 2.0))
-(defparameter *scroll-y* (/ *height* 2.0))
+(defglobal *scroll-x* (/ *width* 2.0))
+(defglobal *scroll-y* (/ *height* 2.0))

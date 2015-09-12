@@ -47,8 +47,8 @@
 (defmethod initialize-instance :after ((tex texture2d) &key)
   t)
 
-(defmethod texture2d-generate ((tex texture2d) (tex-width fixnum)
-                               (tex-height fixnum) image)
+(defmethod texture2d-generate ((tex texture2d) tex-width
+                               tex-height image)
   (with-slots (width height id
                wrap-s wrap-t
                filter-min filter-max

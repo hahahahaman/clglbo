@@ -20,15 +20,18 @@
 
     ;; when enough time has passed render
     (when (>= time-accumulator time-step)
-      (with-components ((pos position-component)
-                        (size size-component)
-                        (rend render-component)) world system
-        (sprite-render *sprite-renderer*
-                       (render-component-sprite rend)
-                       (position-component-vec pos)
-                       (size-component-vec size)
-                       (render-component-rotation rend)
-                       (render-component-color rend)))
+      (with-components ((pos-comp position-component)
+                        (size-comp size-component)
+                        (rend-comp render-component)) world system
+        (with-slots (pos) pos-comp
+          (with-slots (size) size-comp
+            (with-slots (sprite color rotation) rend-comp
+             (sprite-render *sprite-renderer*
+                            sprite
+                            pos
+                            size
+                            rotation
+                            color)))))
       (decf time-accumulator time-step))))
 
 (defclass movement-system (system)
@@ -40,60 +43,60 @@
     :accessor time-accumulator))
   (:default-initargs
    :dependencies '(position-component move-component)
-   :time-step (/ 1.0 60.0)
+   :time-step (/ 1.0 120.0)
    :time-accumulator 0.0))
 
 (defmethod update-system ((world world) (system movement-system) dt)
   (with-slots (time-step time-accumulator) system
     (incf time-accumulator dt)
-    (iter (while (>= time-accumulator time-step))
-      (with-components ((pos position-component) (move move-component)) world system
-        ;; sympletic euler integration
-        ;; this is more accurate usage of newton's equations
-        ;; http://www.niksula.hut.fi/~hkankaan/Homepages/gravity.html
-        (let* ((a (move-component-accel move))
-               (vec-type (type-of a))
-               (add (lambda (v1 v2)
-                      (map vec-type
-                           (lambda (x y) (+ x y))
-                           v1 v2)))
-               (mul (lambda (v1 f)
-                      (map vec-type
-                           (lambda (x) (* x f))
-                           v1)))
-               (a/2 (funcall mul a (* 0.5 time-step))))
-          ;; v += a/2 * dt
-          ;; p += v * dt
-          ;; v += a/2 * dt
-          (setf (move-component-vel move) (funcall add (move-component-vel move) a/2)
-                (position-component-vec pos) (funcall add
-                                                      (position-component-vec pos)
-                                                      (mul (move-component-vel move) time-step))
-                (move-component-vel move) (funcall add (move-component-vel move) a/2)))))))
+
+    (with-components ((pos-comp position-component)
+                      (move-comp move-component)) world system
+      (with-slots (accel vel) move-comp
+        (with-slots (pos) pos-comp
+          (iter (while (>= time-accumulator time-step))
+            (let* ((vec-type (type-of accel))
+                   ;; constant acceleration is assumed
+                   (a/2 (vec-mul accel (* 0.5 time-step))))
+              ;; sympletic euler integration
+              ;; more accurate usage of newton's equations
+              ;; http://www.niksula.hut.fi/~hkankaan/Homepages/gravity.html
+              ;; v += a/2 * dt
+              ;; p += v * dt
+              ;; v += a/2 * dt
+              (setf vel (vec-add vel a/2)
+                    pos (vec-add pos (vec-mul vel time-step))
+                    vel (vec-add vel a/2)))
+            (decf time-accumulator time-step)))))))
 
 (defclass player-movement-system (movement-system)
   ()
   (:default-initargs
-   :dependencies '(position-component size-component movement-component player-component)))
+   :dependencies '(position-component size-component
+                   movement-component player-component)))
 
 (defmethod update-system :after ((world world) (system player-movement-system) dt)
-  (with-components ((pos position-component)) world system
-    (cond ((< (aref (position-component-vec pos) 0) 0.0)
-           (setf (aref (position-component-vec pos) 0) 0.0))
-          ((>= (+ (aref (position-component-vec pos) 0)
-                  (aref (size-component-vec size) 0)) *width*)
-           (setf (aref (position-component-vec pos) 0))))))
+  (with-components ((pos-comp position-component) (size-comp size-component)) world system
+    (with-slots (pos) pos-comp
+      (with-slots (size) size-comp
+        ;; restrict player x position from 0 to *WIDTH*
+        (cond ((< (x-val pos) 0.0)
+               (setf (aref pos 0) 0.0))
+              ((> (+ (x-val pos) (x-val size)) *width*)
+               (setf (aref pos 0) (cfloat *width*))))))))
 
 (defsystem input-system (move-component input-component))
 
 (defmethod update-system ((world world) (system input-system) dt)
-  (with-components ((move move-component)) world system
-    (let ((a-down? (key-down-p :a))
-          (d-down? (key-down-p :d)))
-      (setf (aref (move-component-accel move) 0) (cond ((and a-down? d-down?) 0.0)
-                                                       (a-down? -100.0)
-                                                       (d-down? 100.0)
-                                                       (t 0.0))))))
+  (with-components ((move-comp move-component)) world system
+    (with-slots (accel) move-comp
+      (let ((a-down? (key-down-p :a))
+            (d-down? (key-down-p :d)))
+        ;; A and D key behavior
+        (setf (aref accel 0) (cond ((and a-down? d-down?) 0.0)
+                                   (a-down? -100.0)
+                                   (d-down? 100.0)
+                                   (t 0.0)))))))
 
 ;; (defclass physics-system (system)
 ;;   ((dependencies
