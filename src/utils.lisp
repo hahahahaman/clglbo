@@ -46,8 +46,9 @@
   (cap-fps))
 
 (defun update-window-title (window title)
-  (cl-glfw3:set-window-title (format nil "~A | fps: ~A" title
-                                     (round (average-fps)))
+  (cl-glfw3:set-window-title (format nil "~A | fps: ~A | frame: ~A" title
+                                     (round (average-fps))
+                                     *current-frame*)
                              window))
 
 (defun initialize-globals ()

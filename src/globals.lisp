@@ -36,6 +36,24 @@
 ;; (defglobal *previous-dt* 0.01)
 ;; (defglobal *average-dt* 0.01)
 
+;;; time travel
+
+(defenum:defenum *enum-time-travel-state* ((+time-unpaused+ 0)
+                                           +time-paused+
+                                           +time-backward+
+                                           +time-forward+))
+
+(defglobal *time-travel-state* +time-unpaused+)
+(defglobal *current-frame* 0)
+(defglobal *max-frame-index* 0)
+(defglobal *timeline*
+    (make-array 1000000 :element-type 'list
+                        :initial-element nil
+                        :adjustable t
+                        :fill-pointer 0))
+
+(defglobal *tracked-vars* nil)
+
 ;;; actions
 ;; p-lists that keep track of the current actions on keys and buttons
 (defglobal *key-actions* ())
@@ -48,8 +66,8 @@
 (defglobal *sprite-renderer* nil)
 
 ;;systems
-(defglobal *render-system* nil)
-(defglobal *physics-system* nil)
+;; (defglobal *render-system* nil)
+;; (defglobal *physics-system* nil)
 
 ;;; cursor position values
 (defglobal *cursor-callback-p* nil) ;; cursor has been moved

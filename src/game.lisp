@@ -12,29 +12,13 @@
 ;; entities = list of components
 ;; components = plist
 
-(defenum:defenum *enum-time-travel-state* ((+time-unpaused+ 0)
-                                           +time-paused+
-                                           +time-backward+
-                                           +time-forward+))
-
-(defglobal *time-travel-state* +time-unpaused+)
-(defglobal *current-frame* 0)
-(defglobal *max-frame-index* 0)
-(defglobal *timeline*
-    (make-array 1000000 :element-type 'list
-                        :initial-element nil
-                        :adjustable t
-                        :fill-pointer 0))
-
-(defglobal *tracked-vars* nil)
-
 (defmacro var-keyword (var)
   `(intern (string ',var) :keyword))
 (defmacro var-keyword-macro (var)
   ``(intern (string ',,var) :keyword))
 
 (defmacro track-var (var)
-  "Adds avar to *TRACKED-VARS*, with a keyword symbol of VAR as the key and a lambda
+  "Adds a var to *TRACKED-VARS*, with a keyword symbol of VAR as the key and a lambda
 that returns a list that has stuff that can update *TIMELINE*."
   `(let ((keyword (var-keyword ,var)))
      (setf (getf *tracked-vars* keyword)
@@ -53,8 +37,9 @@ that returns a list that has stuff that can update *TIMELINE*."
 (defmacro untrack-vars (&rest vars)
   `(setf *tracked-vars*
          (alexandria:remove-from-plistf *tracked-vars*
-                                        ,@(mapcar (lambda (v) (var-keyword-macro v))
-                                                  vars))))
+                                        ,@(mapcar
+                                           (lambda (v) (var-keyword-macro v))
+                                           vars))))
 
 (defun update-timeline ()
   "Add plist of tracked values to the current frame"
@@ -69,7 +54,9 @@ that returns a list that has stuff that can update *TIMELINE*."
   ;; constrain between 0 and *MAX-FRAME-INDEX*
   (setf *current-frame* (min (max 0 n) *max-frame-index*))
   ;; (print *current-frame*)
-  (mapcar (lambda (var) (funcall (getf var :setter))) (aref *timeline* *current-frame*)))
+  ;; go through tracked-vars list of that frame setting all values
+  (mapcar (lambda (tracked-var) (funcall (getf tracked-var :setter)))
+          (aref *timeline* *current-frame*)))
 
 (defun pause-time ())
 (defun unpause-time ())
