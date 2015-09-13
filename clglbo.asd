@@ -11,7 +11,8 @@
                #:glkit
                #:trivial-garbage
                #:defenum
-               #:qua)
+               ;; #:qua
+               )
   :serial t
   :components ((:module src
                 :components ((:file "package")
@@ -22,11 +23,11 @@
                              (:file "texture")
                              (:file "resource-manager")
                              (:file "sprite-renderer")
-                             (:file "components")
-                             (:file "systems")
-                             (:file "clump")
-                             (:file "clump-objects")
-                             (:file "level")
+                             ;; (:file "components")
+                             ;; (:file "systems")
+                             ;; (:file "clump")
+                             ;; (:file "clump-objects")
+                             ;; (:file "level")
                              (:file "game")
                              (:file "window")
                              (:file "breakout")

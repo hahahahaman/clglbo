@@ -29,7 +29,7 @@
   ;; (incf *total-frames*)
 
   ;; prevent unruly time steps from breaking game
-  (setf *dt* (max 0.0 (min 0.25 *dt*))))
+  (setf *dt* (max 0.0d0 (min 0.25d0 *dt*))))
 
 (defun cap-fps ()
   "Cap frame rate, preventing resource hogging"

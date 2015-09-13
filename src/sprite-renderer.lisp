@@ -46,7 +46,8 @@
       ;; (gl:free-gl-array verts)
       (gl:delete-buffers (list vbo)))))
 
-(defmethod sprite-render ((sprite-renderer sprite-renderer) (texture2d texture2d) (position vector)
+(defmethod sprite-render ((sprite-renderer sprite-renderer)
+                          (texture2d texture2d) (position vector)
                           &optional
                             (size (kit.glm:vec2 10.0 10.0))
                             (rotate 0.0)

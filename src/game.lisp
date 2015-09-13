@@ -22,13 +22,18 @@
 
 (defglobal *tracked-vars* nil)
 
+(defmacro var-keyword (var)
+  `(intern (string ',var) :keyword))
+(defmacro var-keyword-macro (var)
+  ``(intern (string ',,var) :keyword))
+
 (defmacro track-var (var)
   "Adds avar to *TRACKED-VARS*, with a keyword symbol of VAR as the key and a lambda
 that returns a list that has stuff that can update *TIMELINE*."
-  `(let ((var-keyword (intern (string ',var) :keyword)))
-     (setf (getf *tracked-vars* var-keyword)
+  `(let ((keyword (var-keyword ,var)))
+     (setf (getf *tracked-vars* keyword)
            (lambda ()
-             (list var-keyword ,var
+             (list keyword ,var
                    :setter
                    (let ((var-value ,var))
                      (lambda () (setf ,var var-value))))))))
@@ -39,23 +44,30 @@ that returns a list that has stuff that can update *TIMELINE*."
       (setf expr (append expr `((track-var ,v)))))
     expr))
 
-(defmacro untrack-vars (&rest var-keywords)
-  `(alexandria:remove-from-plistf *tracked-vars* ,@var-keywords))
+(defmacro untrack-vars (&rest vars)
+  `(setf *tracked-vars*
+         (alexandria:remove-from-plistf *tracked-vars*
+                                        ,@(mapcar (lambda (v) (var-keyword-macro v))
+                                                  vars))))
 
 (defun update-timeline ()
   "Add plist of tracked values to the current frame"
   (incf *current-frame*)
   (incf *total-frames*)
   (vector-push-extend
-   (iter (for (var-symbol func) on *tracked-vars* by #'cddr)
+   (iter (for (var-keyword func) on *tracked-vars* by #'cddr)
      (collect (funcall func)))
    *timeline*))
 
-(defvar *entities* nil)
+(defglobal *entities* nil)
 (defun add-entity (components)
-  (push components *entities*))
+  (setf *entities* (append *entities* (list components))))
+(defun add-entities (&rest entities)
+  (mapcar #'add-entity entities))
 (defun remove-entity (n)
   (setf (getf (nth n *entities*) :remove?) t))
+(defun remove-entities (&rest entity-nums)
+  (mapcar #'remove-entity entity-nums))
 
 (defclass game ()
   ((state
@@ -143,8 +155,9 @@ that returns a list that has stuff that can update *TIMELINE*."
        nil))
 
     ;;; timeline
-    ;; (track-var *entities*)
+    ;; (track-var *dt*)
     (track-vars *dt* *entities*)
+    ;; (untrack-vars *entities* *dt*)
 
     ;; qua related stuff
     ;; (load-level (elt levels current-level))
@@ -187,20 +200,26 @@ that returns a list that has stuff that can update *TIMELINE*."
     (format t "keys : ~a | mouse : ~a~%" *key-actions* *mouse-button-actions*))
 
   ;; keys
-  (cond ((key-action-p :escape :press)
-         (glfw:set-window-should-close)))
+  (when (key-action-p :escape :press)
+    (glfw:set-window-should-close))
 
-  ;; mouse buttons
   (cond ((key-action-p :p :press)
          (setf *paused* (not *paused*))
-         (if *paused* (print "paused") (print "unpaused")))))
+         (if *paused* (format t "^PAUSED^~%") (format t "^UNPAUSED^~%"))))
+
+  (when (key-action-p :c :press)
+    (setf *entities* nil))
+
+  ;; mouse buttons
+  (when (mouse-button-action-p :left :press)
+    (add-entity (list :pos (vec2 (cfloat *cursor-x*) (- (cfloat (height game)) (cfloat *cursor-y*)))
+                      :size (vec2 100.0 100.0)
+                      :color (vec4 (random 1.0) (random 1.0) (random 1.0) (random 1.0))
+                      :rotation 0.0
+                      :texture (get-resource *texture-manager* "face")))))
 
 (defmethod update ((game game))
   (when (not *paused*)
-    (gl:clear-color 0.0 0.0 0.0 1.0)
-    ;; (gl:clear :color-buffer-bit :depth-buffer-bit)
-    (gl:clear :color-buffer-bit)
-
     (update-timeline)
 
     ;; (sprite-render *sprite-renderer* (get-resource *texture-manager* "face")
@@ -215,5 +234,29 @@ that returns a list that has stuff that can update *TIMELINE*."
     ;; (update-world (world game) *dt*)
     ))
 
+(let ((timestep (/ 1.0 60.0))
+      (accum 0.0))
+  (defun render-entity (components)
+    (incf accum *dt*)
+
+    (when (>= accum timestep)
+      (let ((pos (getf components :pos))
+            (size (getf components :size))
+            (color (getf components :color))
+            (rotation (getf components :rotation))
+            (texture (getf components :texture)))
+        (when (not (null (and pos size color rotation texture)))
+          (sprite-render *sprite-renderer*
+                         texture
+                         pos
+                         size
+                         rotation
+                         color)))
+      (decf accum timestep))))
+
 (defmethod render ((game game))
-  )
+  (when (not *paused*)
+    (gl:clear-color 0.0 0.0 0.0 1.0)
+    ;; (gl:clear :color-buffer-bit :depth-buffer-bit)
+    (gl:clear :color-buffer-bit)
+    (mapcar #'render-entity *entities*)))
