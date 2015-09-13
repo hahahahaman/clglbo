@@ -19,7 +19,7 @@
 
 (defglobal *time-travel-state* +time-unpaused+)
 (defglobal *current-frame* 0)
-(defglobal *total-frames* 0)
+(defglobal *max-frame-index* 0)
 (defglobal *timeline*
     (make-array 1000000 :element-type 'list
                         :initial-element nil
@@ -59,13 +59,22 @@ that returns a list that has stuff that can update *TIMELINE*."
 (defun update-timeline ()
   "Add plist of tracked values to the current frame"
   (incf *current-frame*)
-  (incf *total-frames*)
+  (incf *max-frame-index*)
   (vector-push-extend
    (iter (for (var-keyword func) on *tracked-vars* by #'cddr)
      (collect (funcall func)))
    *timeline*))
 
-(defun goto-frame (n))
+(defun goto-frame (n)
+  ;; constrain between 0 and *MAX-FRAME-INDEX*
+  (setf *current-frame* (min (max 0 n) *max-frame-index*))
+  ;; (print *current-frame*)
+  (mapcar (lambda (var) (funcall (getf var :setter))) (aref *timeline* *current-frame*)))
+
+(defun pause-time ())
+(defun unpause-time ())
+(defun forward-time ())
+(defun backward-time ())
 
 (defglobal *entities* nil)
 (defun add-entity (components)
@@ -212,15 +221,24 @@ that returns a list that has stuff that can update *TIMELINE*."
     (glfw:set-window-should-close))
 
   (when (key-action-p :p :press)
-    (setf *time-travel-state* (if (= *time-travel-state* +time-paused+)
-                                  +time-unpaused+
-                                  +time-paused+))
+    (setf *time-travel-state* (cond ((= *time-travel-state* +time-paused+)
+                                     ;; unpausing
+                                     ;; so erase the future
+                                     (setf (fill-pointer *timeline*) *current-frame*
+                                           *max-frame-index* *current-frame*)
+                                     +time-unpaused+)
+                                    (t +time-paused+)))
     (case *time-travel-state*
+      (+time-unpaused+ (format t "UNPAUSED~%"))
       (+time-paused+ (format t "PAUSED~%"))
-      (+time-unpaused+ (format t "UNPAUSED~%"))))
+      (otherwise nil)))
 
-  ;; (+time-backward+ (format t "<< GOING BACK~%"))
-  ;; (+time-forward+ (format t ">> GOING FORWARD~%"))
+  (when (key-action-p :z :press)
+    (format t "<< GOING BACK~%")
+    (setf *time-travel-state* +time-backward+))
+  (when (key-action-p :x :press)
+    (format t ">> GOING FORWARD~%")
+    (setf *time-travel-state* +time-forward+))
 
   (when (key-action-p :c :press)
     (setf *entities* nil))
@@ -229,7 +247,7 @@ that returns a list that has stuff that can update *TIMELINE*."
   (when (mouse-button-action-p :left :press)
     (add-entity (list :pos (vec2 (cfloat *cursor-x*) (cfloat *cursor-y*))
                       :size (vec2 50.0 50.0)
-                      :color (vec4 (random 1.0) (random 1.0) (random 1.0) (random 1.0))
+                      :color (vec4 (random 1.0) (random 1.0) (random 1.0) 1.0)
                       :rotation 0.0
                       :texture (get-resource *texture-manager* "face")))))
 
@@ -247,30 +265,27 @@ that returns a list that has stuff that can update *TIMELINE*."
 
          ;; (update-world (world game) *dt*)
          )
-        ()))
+        ((= *time-travel-state* +time-backward+)
+         (goto-frame (1- *current-frame*)))
+        ((= *time-travel-state* +time-forward+)
+         (goto-frame (1+ *current-frame*)))))
 
-(let ((timestep (/ 1.0 60.0))
-      (accum 0.0))
-  (defun render-entity (components)
-    (incf accum *dt*)
-
-    (when (>= accum timestep)
-      (let ((pos (getf components :pos))
-            (size (getf components :size))
-            (color (getf components :color))
-            (rotation (getf components :rotation))
-            (texture (getf components :texture)))
-        (when (not (null (and pos size color rotation texture)))
-          (sprite-render *sprite-renderer*
-                         texture
-                         pos
-                         size
-                         rotation
-                         color)))
-      (decf accum timestep))))
+(defun render-entity (components)
+  (let ((pos (getf components :pos))
+        (size (getf components :size))
+        (color (getf components :color))
+        (rotation (getf components :rotation))
+        (texture (getf components :texture)))
+    (when (not (null (and pos size color rotation texture)))
+      (sprite-render *sprite-renderer*
+                     texture
+                     pos
+                     size
+                     rotation
+                     color))))
 
 (defmethod render ((game game))
-  (when (= *time-travel-state* +time-unpaused+)
+  (when (not (= *time-travel-state* +time-paused+))
     (gl:clear-color 0.0 0.0 0.0 1.0)
     ;; (gl:clear :color-buffer-bit :depth-buffer-bit)
     (gl:clear :color-buffer-bit)
