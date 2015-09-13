@@ -2,7 +2,7 @@
 
 (in-package #:clglbo)
 
-(defenum:defenum *game-state*
+(defenum:defenum *enum-game-state*
                  ((+game-active+ 0)
                   +game-menu+
                   +game-win+))
@@ -12,6 +12,12 @@
 ;; entities = list of components
 ;; components = plist
 
+(defenum:defenum *enum-time-travel-state* ((+time-unpaused+ 0)
+                                           +time-paused+
+                                           +time-backward+
+                                           +time-forward+))
+
+(defglobal *time-travel-state* +time-unpaused+)
 (defglobal *current-frame* 0)
 (defglobal *total-frames* 0)
 (defglobal *timeline*
@@ -58,6 +64,8 @@ that returns a list that has stuff that can update *TIMELINE*."
    (iter (for (var-keyword func) on *tracked-vars* by #'cddr)
      (collect (funcall func)))
    *timeline*))
+
+(defun goto-frame (n))
 
 (defglobal *entities* nil)
 (defun add-entity (components)
@@ -145,8 +153,8 @@ that returns a list that has stuff that can update *TIMELINE*."
         ;; left, right, bottom, top, near, far
         (kit.glm:ortho-matrix 0.0
                               (cfloat (width game))
-                              0.0
                               (cfloat (height game))
+                              0.0
                               -1.0 1.0))
        ;; (vector (kit.math:perspective-matrix (kit.glm:deg-to-rad 45.0)
        ;;                               (cfloat (/ *width* *height*))
@@ -203,36 +211,43 @@ that returns a list that has stuff that can update *TIMELINE*."
   (when (key-action-p :escape :press)
     (glfw:set-window-should-close))
 
-  (cond ((key-action-p :p :press)
-         (setf *paused* (not *paused*))
-         (if *paused* (format t "^PAUSED^~%") (format t "^UNPAUSED^~%"))))
+  (when (key-action-p :p :press)
+    (setf *time-travel-state* (if (= *time-travel-state* +time-paused+)
+                                  +time-unpaused+
+                                  +time-paused+))
+    (case *time-travel-state*
+      (+time-paused+ (format t "PAUSED~%"))
+      (+time-unpaused+ (format t "UNPAUSED~%"))))
+
+  ;; (+time-backward+ (format t "<< GOING BACK~%"))
+  ;; (+time-forward+ (format t ">> GOING FORWARD~%"))
 
   (when (key-action-p :c :press)
     (setf *entities* nil))
 
   ;; mouse buttons
   (when (mouse-button-action-p :left :press)
-    (add-entity (list :pos (vec2 (cfloat *cursor-x*) (- (cfloat (height game)) (cfloat *cursor-y*)))
-                      :size (vec2 100.0 100.0)
+    (add-entity (list :pos (vec2 (cfloat *cursor-x*) (cfloat *cursor-y*))
+                      :size (vec2 50.0 50.0)
                       :color (vec4 (random 1.0) (random 1.0) (random 1.0) (random 1.0))
                       :rotation 0.0
                       :texture (get-resource *texture-manager* "face")))))
 
 (defmethod update ((game game))
-  (when (not *paused*)
-    (update-timeline)
+  (cond ((= *time-travel-state* +time-unpaused+) 
+         (update-timeline)
+         ;; (sprite-render *sprite-renderer* (get-resource *texture-manager* "face")
+         ;;                (kit.glm:vec2 0.0 0.0)
+         ;;                (kit.glm:vec2 (cfloat (width game)) (cfloat (height game)))
+         ;;                0.0
+         ;;                (kit.glm:vec4 (cfloat (+ 0.5 (* 0.5 (sin (glfw:get-time)))))
+         ;;                              (cfloat ( + 0.5 (* 0.5 (cos (glfw:get-time)))))
+         ;;                              0.0
+         ;;                              1.0))
 
-    ;; (sprite-render *sprite-renderer* (get-resource *texture-manager* "face")
-    ;;                (kit.glm:vec2 0.0 0.0)
-    ;;                (kit.glm:vec2 (cfloat (width game)) (cfloat (height game)))
-    ;;                0.0
-    ;;                (kit.glm:vec4 (cfloat (+ 0.5 (* 0.5 (sin (glfw:get-time)))))
-    ;;                              (cfloat ( + 0.5 (* 0.5 (cos (glfw:get-time)))))
-    ;;                              0.0
-    ;;                              1.0))
-
-    ;; (update-world (world game) *dt*)
-    ))
+         ;; (update-world (world game) *dt*)
+         )
+        ()))
 
 (let ((timestep (/ 1.0 60.0))
       (accum 0.0))
@@ -255,7 +270,7 @@ that returns a list that has stuff that can update *TIMELINE*."
       (decf accum timestep))))
 
 (defmethod render ((game game))
-  (when (not *paused*)
+  (when (= *time-travel-state* +time-unpaused+)
     (gl:clear-color 0.0 0.0 0.0 1.0)
     ;; (gl:clear :color-buffer-bit :depth-buffer-bit)
     (gl:clear :color-buffer-bit)

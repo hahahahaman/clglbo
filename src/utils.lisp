@@ -51,22 +51,6 @@
                              window))
 
 (defun initialize-globals ()
-  ;; (setf *dt* 0.01
-  ;;       *previous-time* 0.0
-  ;;       *total-dt* 0.0
-  ;;       *total-frames* 0.0
-  ;;       *average-fps* 0.0
-  ;;       *cursor-callback-p* nil
-  ;;       *scroll-callback-P* nil
-  ;;       *cursor-x* (/ *width* 2.0)
-  ;;       *cursor-y* (/ *height* 2.0)
-  ;;       *scroll-x* (/ *width* 2.0)
-  ;;       *scroll-y* (/ *height* 2.0)
-  ;;       *last-x* (/ *width* 2.0)
-  ;;       *last-y* (/ *height* 2.0)
-  ;;       *first-mouse* t
-  ;;       *paused* nil
-  ;;       *debug* nil)
   (iter (for (var-symbol func) on *global-setfs* by #'cddr)
     (funcall func)))
 

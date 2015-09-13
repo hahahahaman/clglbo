@@ -16,8 +16,8 @@
 
 ;; debug mode, default nil
 (defglobal *debug* nil)
-;; paused
-(defglobal *paused* nil)
+;; ;; paused
+;; (defglobal *paused* nil)
 
 ;;; screen constants
 ;; not really much use, just keeps value holders

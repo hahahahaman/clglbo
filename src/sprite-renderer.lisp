@@ -31,11 +31,11 @@
       (with-sequence-to-gl-array (verts
                                   ;;      Pos     Tex
                                   (vector 0.0 0.0 0.0 0.0
-                                          1.0 0.0 -1.0 0.0
-                                          0.0 1.0 0.0 -1.0
-                                          1.0 1.0 -1.0 -1.0)
+                                          1.0 0.0 1.0 0.0
+                                          0.0 1.0 0.0 1.0
+                                          1.0 1.0 1.0 1.0)
                                   :float)
-          (gl:buffer-data :array-buffer :static-draw verts))
+        (gl:buffer-data :array-buffer :static-draw verts))
 
       (gl:enable-vertex-attrib-array 0)
       (gl:vertex-attrib-pointer 0 4 :float nil (sizeof* :float 4) 0)
