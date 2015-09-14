@@ -68,7 +68,7 @@ that returns a list that has stuff that can update *TIMELINE*."
   (when (not (eql *time-travel-state* +time-paused+))
     (setf *time-travel-state* +time-paused+)))
 
-(defun unpause-pressed ()
+(defun play-pressed ()
   (when (not (eql *time-travel-state* +time-play+))
     ;; erase the future
     (iter (for i from *current-frame* to *max-frame-index*)
@@ -249,9 +249,9 @@ that returns a list that has stuff that can update *TIMELINE*."
     (glfw:set-window-should-close))
 
   (when (key-action-p :p :press)
-    (cond ((eql *time-travel-state* +time-paused+)
-           (unpause-pressed))
-          (t (pause-pressed))))
+    (pause-pressed))
+  (when (key-action-p :o :press)
+    (play-pressed))
 
   (when (key-action-p :z :press)
     (rewind-pressed))
