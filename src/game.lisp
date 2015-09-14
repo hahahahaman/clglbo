@@ -88,9 +88,14 @@ that returns a list that has stuff that can update *TIMELINE*."
          (setf *time-speed-index* (mod (1+ *time-speed-index*)
                                        (length *time-speed-multiplier*))))))
 
-(defun forward-time ()
-  (goto-frame (+ *current-frame*
-                 (aref *time-speed-multiplier* *time-speed-index*))))
+(let ((timestep (/ 1.0 60.0d0))
+      (accum 0.0d0))
+  (defun forward-time ()
+    (incf accum *dt*)
+    (iter (while (>= accum timestep))
+      (goto-frame (+ *current-frame*
+                     (aref *time-speed-multiplier* *time-speed-index*)))
+      (decf accum timestep))))
 
 (defun rewind-pressed ()
   (cond ((not (eql *time-travel-state* +time-rewind+))
@@ -100,9 +105,14 @@ that returns a list that has stuff that can update *TIMELINE*."
          (setf *time-speed-index* (mod (1+ *time-speed-index*)
                                        (length *time-speed-multiplier*))))))
 
-(defun rewind-time ()
-  (goto-frame (- *current-frame*
-                 (aref *time-speed-multiplier* *time-speed-index*))))
+(let ((timestep (/ 1.0d0 60.0d0))
+      (accum 0.0d0))
+  (defun rewind-time ()
+    (incf accum *dt*)
+    (iter (while (>= accum timestep))
+      (goto-frame (- *current-frame*
+                     (aref *time-speed-multiplier* *time-speed-index*)))
+      (decf accum timestep))))
 
 (defglobal *entities* nil)
 (defun add-entity (components)
