@@ -90,8 +90,8 @@
 (defmethod update-system ((world world) (system input-system) dt)
   (with-components ((move-comp move-component)) world system
     (with-slots (accel) move-comp
-      (let ((a-down? (key-down-p :a))
-            (d-down? (key-down-p :d)))
+      (let ((a-down? (key-pressed-p :a))
+            (d-down? (key-pressed-p :d)))
         ;; A and D key behavior
         (setf (aref accel 0) (cond ((and a-down? d-down?) 0.0)
                                    (a-down? -100.0)

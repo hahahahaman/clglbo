@@ -10,23 +10,22 @@
 (glfw:def-key-callback key-callback (window key scancode action mod-keys)
   (declare (ignore window scancode mod-keys))
   (setf (getf *key-actions* key) action)
-  ;; (print *key-actions*)
-  ;; (cond ((eq action :press)
-  ;;        (setf (getf *key-actions* key) :press))
-  ;;       ((eq action :release)
-  ;;        (setf (getf *key-actions* key) :release)))
-  )
+
+  ;; trouble getting :repeat events, so keep key pressed until :release
+  (cond ((eq action :press)
+         (setf (getf *key-pressed* key) t))
+        ((eq action :release)
+         (setf (getf *key-pressed* key) nil))))
 
 ;; mouse button pressed
 (glfw:def-mouse-button-callback mouse-callback (window button action mod-keys)
   (declare (ignore window mod-keys))
   (setf (getf *mouse-button-actions* button) action)
-  ;; (print *mouse-button-actions*)
-  ;; (cond ((eq action :press)
-        ;;  (setf (getf *mouse-button-actions* button) :press))
-        ;; ((eq action :release)
-        ;;  (setf (getf *mouse-button-actions* button) :release)))
-  )
+
+  (cond ((eq action :press)
+         (setf (getf *mouse-button-pressed* button) t))
+        ((eq action :release)
+         (setf (getf *mouse-button-pressed* button) nil))))
 
 ;; cursor movement
 (glfw:def-cursor-pos-callback cursor-callback (window x y)

@@ -1,11 +1,11 @@
-;;; game.lisp
+;; game.lisp
 
 (in-package #:clglbo)
 
 (defenum:defenum *enum-game-state*
-                 ((+game-active+ 0)
-                  +game-menu+
-                  +game-win+))
+    ((+game-active+ 0)
+     +game-menu+
+     +game-win+))
 
 ;; timeline = vector of tracked-vars each frame
 ;; tracked-vars = plist of lambdas that get the value of a tracked var
@@ -52,16 +52,57 @@ that returns a list that has stuff that can update *TIMELINE*."
 
 (defun goto-frame (n)
   ;; constrain between 0 and *MAX-FRAME-INDEX*
-  (setf *current-frame* (min (max 0 n) *max-frame-index*))
-  ;; (print *current-frame*)
+  (setf *current-frame* n)
+  (when (< *current-frame* 0)
+    (pause-pressed)
+    (setf *current-frame* 0))
+  (when (> *current-frame* *max-frame-index*)
+    (pause-pressed)
+    (setf *current-frame* *max-frame-index*))
+
   ;; go through tracked-vars list of that frame setting all values
   (mapcar (lambda (tracked-var) (funcall (getf tracked-var :setter)))
           (aref *timeline* *current-frame*)))
 
-(defun pause-time ())
-(defun unpause-time ())
-(defun forward-time ())
-(defun backward-time ())
+(defun pause-pressed ()
+  (when (not (eql *time-travel-state* +time-paused+))
+    (setf *time-travel-state* +time-paused+)))
+
+(defun unpause-pressed ()
+  (when (not (eql *time-travel-state* +time-play+))
+    ;; erase the future
+    (iter (for i from *current-frame* to *max-frame-index*)
+      (setf (aref *timeline* i) nil))
+    (setf *time-travel-state* +time-play+
+          (fill-pointer *timeline*) *current-frame*
+          *max-frame-index* *current-frame*)))
+
+(defglobal *time-speed-multiplier* (vector 1 2 4 8 16 32))
+(defglobal *time-speed-index* 0)
+
+(defun forward-pressed ()
+  (cond ((not (eql *time-travel-state* +time-forward+))
+         (setf *time-travel-state* +time-forward+
+               *time-speed-index* 0))
+        (t
+         (setf *time-speed-index* (mod (1+ *time-speed-index*)
+                                       (length *time-speed-multiplier*))))))
+
+(defun forward-time ()
+  (goto-frame (+ *current-frame*
+                 (aref *time-speed-multiplier* *time-speed-index*))))
+
+(defun rewind-pressed ()
+  (cond ((not (eql *time-travel-state* +time-rewind+))
+         (setf *time-travel-state* +time-rewind+
+               *time-speed-index* 0))
+        (t
+         (setf *time-speed-index* (mod (1+ *time-speed-index*)
+                                       (length *time-speed-multiplier*))))))
+
+(defun rewind-time ()
+  (goto-frame (- *current-frame*
+                 (aref *time-speed-multiplier* *time-speed-index*))))
 
 (defglobal *entities* nil)
 (defun add-entity (components)
@@ -208,38 +249,32 @@ that returns a list that has stuff that can update *TIMELINE*."
     (glfw:set-window-should-close))
 
   (when (key-action-p :p :press)
-    (setf *time-travel-state* (cond ((= *time-travel-state* +time-paused+)
-                                     ;; unpausing
-                                     ;; so erase the future
-                                     (setf (fill-pointer *timeline*) *current-frame*
-                                           *max-frame-index* *current-frame*)
-                                     +time-unpaused+)
-                                    (t +time-paused+)))
-    (case *time-travel-state*
-      (+time-unpaused+ (format t "UNPAUSED~%"))
-      (+time-paused+ (format t "PAUSED~%"))
-      (otherwise nil)))
+    (cond ((eql *time-travel-state* +time-paused+)
+           (unpause-pressed))
+          (t (pause-pressed))))
 
   (when (key-action-p :z :press)
-    (format t "<< GOING BACK~%")
-    (setf *time-travel-state* +time-backward+))
+    (rewind-pressed))
   (when (key-action-p :x :press)
-    (format t ">> GOING FORWARD~%")
-    (setf *time-travel-state* +time-forward+))
+    (forward-pressed))
 
-  (when (key-action-p :c :press)
-    (setf *entities* nil))
+  (when (eql *time-travel-state* +time-play+)
+    (when (key-action-p :c :press)
+      (setf *entities* nil))
 
-  ;; mouse buttons
-  (when (mouse-button-action-p :left :press)
-    (add-entity (list :pos (vec2 (cfloat *cursor-x*) (cfloat *cursor-y*))
-                      :size (vec2 50.0 50.0)
-                      :color (vec4 (random 1.0) (random 1.0) (random 1.0) 1.0)
-                      :rotation 0.0
-                      :texture (get-resource *texture-manager* "face")))))
+    ;; mouse buttons
+    (when (mouse-button-pressed-p :left)
+      (let ((w 50.0)
+            (h 50.0))
+        (add-entity (list :pos (vec2 (- (cfloat *cursor-x*) (/ w 2.0))
+                                     (- (cfloat *cursor-y*) (/ h 2.0)))
+                          :size (vec2 w h)
+                          :color (vec4 (random 1.0) (random 1.0) (random 1.0) 1.0)
+                          :rotation 0.0
+                          :texture (get-resource *texture-manager* "face")))))))
 
 (defmethod update ((game game))
-  (cond ((= *time-travel-state* +time-unpaused+) 
+  (cond ((eql *time-travel-state* +time-play+) 
          (update-timeline)
          ;; (sprite-render *sprite-renderer* (get-resource *texture-manager* "face")
          ;;                (kit.glm:vec2 0.0 0.0)
@@ -252,10 +287,10 @@ that returns a list that has stuff that can update *TIMELINE*."
 
          ;; (update-world (world game) *dt*)
          )
-        ((= *time-travel-state* +time-backward+)
-         (goto-frame (1- *current-frame*)))
-        ((= *time-travel-state* +time-forward+)
-         (goto-frame (1+ *current-frame*)))))
+        ((eql *time-travel-state* +time-rewind+)
+         (rewind-time))
+        ((eql *time-travel-state* +time-forward+)
+         (forward-time))))
 
 (defun render-entity (components)
   (let ((pos (getf components :pos))
@@ -272,7 +307,7 @@ that returns a list that has stuff that can update *TIMELINE*."
                      color))))
 
 (defmethod render ((game game))
-  (when (not (= *time-travel-state* +time-paused+))
+  (when (not (eql *time-travel-state* +time-paused+))
     (gl:clear-color 0.0 0.0 0.0 1.0)
     ;; (gl:clear :color-buffer-bit :depth-buffer-bit)
     (gl:clear :color-buffer-bit)

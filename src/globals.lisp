@@ -38,12 +38,12 @@
 
 ;;; time travel
 
-(defenum:defenum *enum-time-travel-state* ((+time-unpaused+ 0)
+(defenum:defenum *enum-time-travel-state* ((+time-play+ 0)
                                            +time-paused+
-                                           +time-backward+
+                                           +time-rewind+
                                            +time-forward+))
 
-(defglobal *time-travel-state* +time-unpaused+)
+(defglobal *time-travel-state* +time-play+)
 (defglobal *current-frame* 0)
 (defglobal *max-frame-index* 0)
 (defglobal *timeline*
@@ -58,6 +58,8 @@
 ;; p-lists that keep track of the current actions on keys and buttons
 (defglobal *key-actions* ())
 (defglobal *mouse-button-actions* ())
+(defglobal *key-pressed* ())
+(defglobal *mouse-button-pressed* ())
 
 ;;; singletons
 ;; singletons used for resource management and rendering

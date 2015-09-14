@@ -46,10 +46,22 @@
   (cap-fps))
 
 (defun update-window-title (window title)
-  (cl-glfw3:set-window-title (format nil "~A | fps: ~A | frame: ~A" title
-                                     (round (average-fps))
-                                     *current-frame*)
-                             window))
+  (cl-glfw3:set-window-title
+   (format nil "~A | fps: ~A | frame: ~A | time-travel-state: ~A |"
+           title
+           (round (average-fps))
+           *current-frame*
+           (cond ((eql *time-travel-state* +time-play+)
+                  "PLAY")
+                 ((eql *time-travel-state* +time-paused+)
+                  "PAUSED")
+                 ((eql *time-travel-state* +time-forward+)
+                  (format nil "FORWARD x~d"
+                          (aref *time-speed-multiplier* *time-speed-index*)))
+                 ((eql *time-travel-state* +time-rewind+)
+                  (format nil "REWIND x~d"
+                          (aref *time-speed-multiplier* *time-speed-index*)))))
+   window))
 
 (defun initialize-globals ()
   (iter (for (var-symbol func) on *global-setfs* by #'cddr)
@@ -61,14 +73,16 @@
     (and (not (null state)) ;; if STATE is not null then key must have been found
          (eq action state))))
 
-(defun key-down-p (key)
-  (or (key-action-p key :press) (key-action-p key :repeat)))
+(defun key-pressed-p (key)
+  (getf *key-pressed* key))
 
 (defun mouse-button-action-p (button action)
   "Returns true if KEY is in *mouse-button-actions* and its state is EQ to ACTION."
   (let ((state (getf *mouse-button-actions* button)))
     (and (not (null state)) ;; if STATE is not null then button be active
          (eq action state))))
+(defun mouse-button-pressed-p (button)
+  (getf *mouse-button-pressed* button))
 
 ;;; type utils
 (defun concat-vecs (&rest vecs)
