@@ -266,3 +266,11 @@ whitespaces."
           ((eq (car plist) indicator)
            (return (append (subseq place 0 (1+ n))
                            (cons value (nthcdr (+ n 2) place))))))))
+
+;;; total heap size
+;; (define-alien-variable ("dynamic_space_size" dynamic-space-size-bytes)
+;;   unsigned-long)
+;; (defun heap-n-bytes ()
+;;   (+ dynamic-space-size-bytes
+;;      (- sb-vm::read-only-space-end sb-vm::read-only-space-start)
+;;      (- sb-vm::static-space-end sb-vm::static-space-start)))

@@ -47,10 +47,10 @@
 (defglobal *current-frame* 0)
 (defglobal *max-frame-index* 0)
 (defglobal *timeline*
-    (make-array 1000000 :element-type 'list
-                        :initial-element nil
-                        :adjustable t
-                        :fill-pointer 0))
+    (make-array 500000 :element-type 'list
+                       :initial-element nil
+                       :adjustable t
+                       :fill-pointer 0))
 
 (defglobal *tracked-vars* nil)
 
