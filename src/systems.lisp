@@ -26,12 +26,11 @@
         (with-slots (pos) pos-comp
           (with-slots (size) size-comp
             (with-slots (sprite color rotation) rend-comp
-             (sprite-render *sprite-renderer*
-                            sprite
-                            pos
-                            size
-                            rotation
-                            color)))))
+              (sprite-render sprite
+                             pos
+                             size
+                             color
+                             rotation)))))
       (decf time-accumulator time-step))))
 
 (defclass movement-system (system)

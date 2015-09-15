@@ -253,3 +253,16 @@ whitespaces."
 (defun set-nth (n elem list)
   (append (subseq list 0 n) (cons elem (nthcdr (1+ n) list))))
 
+(defun plist-set (place indicator value)
+  (do ((plist place (cddr plist))
+       (n 0 (+ 2 n)))
+      ((null plist) (append place (list indicator value)))
+    (cond ((atom (cdr plist))
+           (error 'simple-type-error
+                  :format-control "malformed property list: ~S."
+                  :format-arguments (list place)
+                  :datum (cdr plist)
+                  :expected-type 'cons))
+          ((eq (car plist) indicator)
+           (return (append (subseq place 0 (1+ n))
+                           (cons value (nthcdr (+ n 2) place))))))))

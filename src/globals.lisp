@@ -89,3 +89,7 @@
 ;; number of ticks of the scroll wheel
 (defglobal *scroll-x* (/ *width* 2.0))
 (defglobal *scroll-y* (/ *height* 2.0))
+
+;;; entities
+
+(defglobal *entities* nil)

@@ -46,13 +46,14 @@
       ;; (gl:free-gl-array verts)
       (gl:delete-buffers (list vbo)))))
 
-(defmethod sprite-render ((sprite-renderer sprite-renderer)
-                          (texture2d texture2d) (position vector)
+(defmethod sprite-render ((texture2d texture2d)
+                          (position vector)
                           &optional
                             (size (kit.glm:vec2 10.0 10.0))
+                            (color (kit.glm:vec4 1.0 1.0 1.0 1.0))
                             (rotate 0.0)
-                            (color (kit.glm:vec4 1.0 1.0 1.0 1.0)))
-  (with-accessors ((program program) (vao vao)) sprite-renderer
+                            (renderer *sprite-renderer*))
+  (with-accessors ((program program) (vao vao)) renderer
     (use program)
 
     (gl:uniformfv (get-uniform program "spriteColor") color)
