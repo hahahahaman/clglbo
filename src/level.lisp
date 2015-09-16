@@ -112,12 +112,26 @@
      ;; level bricks
      (map 'vector #'add-entity bricks)
 
-     ;; paddle
-     (let ((w 120.0)
-           (h 25.0))
-       (add-entity (list :pos (vec2 (/ (- *width* w) 2.0) (- *height* (+ h 10.0)))
+     (let* ((w 120.0)
+            (h 25.0)
+            (r 30.0)
+            (ppos (vec2 (/ (- *width* w) 2.0) (- *height* h 10.0)))
+            (bpos (vec2 (/ (- *width* r) 2.0) (- (aref ppos 1) r 10.0))))
+       ;; paddle
+       (add-entity (list :pos ppos
                          :size (vec2 w h)
                          :texture (get-texture "paddle")
                          :color (vec4 1.0 1.0 1.0 1.0)
                          :rotation 0.0
-                         :player-input t)))))
+                         :vel (vec2 0.0 0.0)
+                         :player t))
+       ;; ball
+       (add-entity (list :pos bpos
+                         :size (vec2 r r)
+                         :texture (get-texture "face")
+                         :color (vec4 1.0 1.0 1.0 1.0)
+                         :rotation 0.0
+                         :vel (vec2 0.0 0.0)
+                         :follow-player t
+                         :init-vel (vec2 100.0 -350.0)
+                         :ball t)))))

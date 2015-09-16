@@ -16,10 +16,11 @@ that returns a list that has stuff that can update *TIMELINE*."
   `(let ((keyword (var-keyword ,var)))
      (setf (getf *tracked-vars* keyword)
            (lambda ()
-             (list keyword ,var
-                   :setter
-                   (let ((var-value ,var))
-                     (lambda () (setf ,var var-value))))))))
+             (list
+              ;; keyword ,var
+              :setter
+              (let ((var-value ,var))
+                (lambda () (setf ,var var-value))))))))
 
 (defmacro track-vars (&rest vars)
   (let ((expr '(progn)))

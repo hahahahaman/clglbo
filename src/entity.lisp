@@ -1,8 +1,8 @@
 (in-package #:clglbo)
 
 (defun add-entity (components-list)
-  (setf *entities*
-        (append *entities* (list components-list))))
+  (1- (length (setf *entities*
+                    (append *entities* (list components-list))))))
 (defun add-entities (&rest entities)
   (mapcar #'add-entity entities))
 
@@ -19,5 +19,20 @@
 ;;   (setf components (plist-set components component value)))
 
 (defun update-entities ()
+  (setf *entities* (remove-if (lambda (e) (getf e :remove?)) *entities*))
   ;; (setf *entities* (mapcar #'copy-hash-table *entities*))
   t)
+
+(defun get-entity (n)
+  (nth n *entities*))
+(defun (setf get-entity) (value n)
+  (setf (nth n *entities*) value))
+
+(defun find-entity (predicate)
+  (iter (for e in *entities*) (for i from 0)
+    (when (funcall predicate e)
+      (return (values i e)))))
+
+(defun set-entity-component (component value predicate)
+  (let ((e (find-entity predicate)))
+    (values e (set-component component value (get-entity e)))))
