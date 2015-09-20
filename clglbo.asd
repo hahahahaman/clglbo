@@ -4,8 +4,9 @@
   :description "breakout?"
   :author "hahahahaman <hahahadude@gmail.com>"
   :license "Licenceless Rider"
-  :depends-on (#:cl-opengl
+  :depends-on (#:alexandria
                #:cl-glfw3
+               #:cl-opengl
                #:cl-soil
                #:fset
                #:glkit

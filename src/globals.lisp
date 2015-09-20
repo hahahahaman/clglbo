@@ -92,4 +92,4 @@
 
 ;;; entities
 
-(defglobal *entities* nil)
+(defglobal *entities* (empty-map))

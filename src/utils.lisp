@@ -4,7 +4,7 @@
 
 (in-package #:clglbo)
 
-(let* ((max-samples 1000)
+(let* ((max-samples 500)
        (samples (make-array max-samples
                             :element-type 'double-float
                             :initial-element (/ 1.0d0 +max-fps+)))
@@ -132,15 +132,15 @@ Remember to free gl-array afterwards."
 (defun vec-add (v1 v2)
   "Returns a vector of the same type as V1, which is a component-wise sum of
 V1 and V2."
-  (map (type-of v1)
-       (lambda (x y) (+ x y))
-       v1 v2))
+  (cl:map (type-of v1)
+          (lambda (x y) (+ x y))
+          v1 v2))
 
 (defun vec-mul (v1 f)
   "Returns a vector with the same type as V1, which has components multiplied by F."
-  (map (type-of v1)
-       (lambda (x) (* x f))
-       v1))
+  (cl:map (type-of v1)
+          (lambda (x) (* x f))
+          v1))
 
 (defun x-val (vec)
   (aref vec 0))

@@ -50,11 +50,14 @@
   (setf (resources manager) '()))
 
 (defmethod clear-resources ((manager program-manager))
+  ;; (mapcar (lambda (resource) (gl:delete-program (id (cdr resource))) (resources manager)))
   (iter (for (name . resource) in (resources manager))
     (gl:delete-program (id resource))))
 
 (defmethod clear-resources ((manager texture-manager))
   (gl:delete-textures
-   (iter (for (name . resource) in (resources manager))
-     (collect (id resource)))))
+   (mapcar (lambda (resource) (id (cdr resource))) (resources manager))
+   ;; (iter (for (name . resource) in (resources manager))
+   ;;   (collect (id resource)))
+   ))
 
