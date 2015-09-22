@@ -3,7 +3,7 @@
 (let ((id 0))
   (defun make-entity (components &optional (entities *entities*))
     (incf id)
-    (values (fset:with entities id components) id)))
+    (values (with entities id components) id)))
 
 ;; (defun add-entity (entity &optional (entities *entities*))
 ;;   (append entities (list entity)))
@@ -14,12 +14,12 @@
 (defun remove-entity (id &optional (entities *entities*))
   (less entities id))
 (defmacro remove-entities (ids &optional (entities *entities*))
-  `(-> entities ,@(mapcar (lambda (id) `(less ,i)) ids)))
+  `(-> ,entities ,@(mapcar (lambda (id) `(less ,id)) ids)))
 
 (defun get-component (component id &optional (entities *entities*))
   (@ (@ entities id) component))
-(defun (setf get-component) (value component id &optional (entities *entities*))
-  (with (@ entities id) component value))
+(defun set-component  (component id value &optional (entities *entities*))
+  (with entities id (with (@ entities id) component value)))
 
 ;; (defmacro set-component (component entity-id value)
 ;;   `(setf ,components (plist-set ,components ,component ,value)))
@@ -28,7 +28,8 @@
 ;; ;; (defun (setf get-component) (value component components)
 ;; ;;   (setf components (plist-set components component value)))
 
-(defun update-entities (&optional (changes nil) (entities *entities*))
+(defun update-entities (&optional (changes *destructive-changes*) (entities *entities*))
+  (declare (ignore entities))
   (mapcar #'funcall changes)
   ;; (setf *entities* (remove-if (lambda (e) (getf e :remove?)) *entities*))
   ;; (setf *entities* (mapcar #'copy-hash-table *entities*))
@@ -36,5 +37,8 @@
 
 (defun get-entity (id &optional (entities *entities*))
   (@ entities id))
-(defun (setf get-entity) (value id &optional (entities *entities*))
-  (with (@ entities id) value))
+(defun set-entity (id value  &optional (entities *entities*))
+  (with entities id value))
+
+(defun find-entities (predicate &optional (entities *entities*))
+  (get-map-keys (filter predicate entities)))

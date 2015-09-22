@@ -267,6 +267,8 @@ whitespaces."
            (return (append (subseq place 0 (1+ n))
                            (cons value (nthcdr (+ n 2) place))))))))
 
+(defun get-map-keys (map)
+  (image (lambda (x) (car x)) (convert 'list map)))
 ;;; total heap size
 ;; (define-alien-variable ("dynamic_space_size" dynamic-space-size-bytes)
 ;;   unsigned-long)

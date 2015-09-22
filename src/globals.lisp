@@ -93,3 +93,4 @@
 ;;; entities
 
 (defglobal *entities* (empty-map))
+(defglobal *destructive-changes* ())

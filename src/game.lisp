@@ -84,26 +84,21 @@
 
     (setf *entities* (load-level (aref levels current-level)))))
 
-;; (defun handle-player-input (&optional (entities *entities*))
-;;   (flet ((handle-player (components)
-;;            (let ((player (get-component :player components))
-;;                  (follow-player (get-component :follow-player components))
-;;                  (vel (get-component :vel components))
-;;                  ;; (accel (get-component :accel components))
-;;                  )
-;;              (cond ((and (or player follow-player) vel)
-;;                     (cond ((key-pressed-p :left) 
-;;                            (set-component :vel (vec2 -200.0 0.0) components))
-;;                           ((key-pressed-p :right)
-;;                            (set-component :vel (vec2 200.0 0.0) components))
-;;                           (t (set-component :vel (vec2 0.0 0.0) components)))
-;;                     (when (and follow-player (get-component :ball components)
-;;                                (key-pressed-p :up))
-;;                       (set-component :follow-player nil components)
-;;                       (set-component :vel (get-component :init-vel components) components))
-;;                     components)
-;;                    (t components)))))
-;;     (setf *entities* (mapcar #'handle-player *entities*))))
+(defun handle-player-input (&optional (changes *destructive-changes*) (entities *entities*))
+  (flet ((playable-p (id components)
+           (declare (ignore components))
+           (and (or (get-component :player id) (get-component :follow-player id))
+                (get-component :vel id)))
+         (handle-player (id components)
+           (declare (ignore components))
+           (cond ((key-pressed-p :left) 
+                  (lambda () (setf *entities* (set-component :vel id (vec2 -200.0 0.0)))))
+                 ((key-pressed-p :right)
+                  (lambda () (setf *entities* (set-component :vel id (vec2 200.0 0.0)))))
+                 (t (lambda () (setf *entities* (set-component :vel id (vec2 0.0 0.0))))))))
+    (append changes
+            (get-map-keys (image #'handle-player
+                                 (filter #'playable-p entities))))))
 
 (defmethod handle-input ((game game))
   ;;debugging
@@ -137,24 +132,34 @@
     ;;                       :color (vec4 (random 1.0) (random 1.0) (random 1.0) 1.0)
     ;;                       :rotation 0.0
     ;;                       :texture (get-texture "face")))))
-    ;; (handle-player-input)
-    ))
+    (setf *destructive-changes* (handle-player-input))))
 
-(defun move-entities (&optional (entities *entities*))
-  (flet ((move (components)
-           (let ((pos (get-component :pos components))
-                 (vel (get-component :vel components)))
-             (cond ((and pos vel)
-                    (set-component :pos (vec-add pos (vec-mul vel (cfloat *dt*)))
-                                   components))
-                   (t components)))))
-    (setf *entities* (mapcar #'move *entities*))))
+(defun move-entities (&optional (dt *dt*) (changes *destructive-changes*)
+                        (entities *entities*))
+  (flet ((moveable-p (id components)
+           (declare (ignore components))
+           (and (get-component :pos id)
+                (get-component :vel id)))
+         (move (id components)
+           (declare (ignore components))
+           (lambda ()
+             (setf *entities* (set-component
+                               :pos
+                               id
+                               (vec-add (get-component :pos id)
+                                        (vec-mul (get-component :vel id)
+                                                 (cfloat dt))))))))
+
+    (append changes
+            (get-map-keys (image #'move
+                                 (filter #'moveable-p entities))))))
 
 (defmethod update ((game game))
   (cond ((eql *time-travel-state* +time-play+) 
-         (move-entities)
+         (setf *destructive-changes* (move-entities))
          (update-entities)
-         (update-timeline))
+         (update-timeline)
+         (setf *destructive-changes* nil))
 
         ((eql *time-travel-state* +time-rewind+)
          (rewind-time))
@@ -175,6 +180,7 @@
                               color
                               rotation)))))
     (do-map (id components entities)
+      (declare (ignore components))
       (render-entity id))))
 
 (defmethod render ((game game))
