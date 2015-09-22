@@ -138,3 +138,15 @@
                          (:init-vel (vec2 100.0 -350.0))
                          (:ball t))))
       entities)))
+
+(defun level-complete-p (&optional (entities *entities*))
+  (= 0 (length
+        (find-entities
+         (lambda (id comps)
+           (declare (ignore comps))
+           (let ((brickp (nth-value 1 (get-component :brick-solid-p id)))
+                 (solidp (get-component :brick-solid-p id)))
+             (and brickp (not solidp))))
+         entities))))
+
+

@@ -84,6 +84,12 @@
 
     (setf *entities* (load-level (aref levels current-level)))))
 
+(defun next-level (game &optional (level-incf 1))
+  (with-slots (levels current-level width height) game
+    (setf current-level (mod (+ current-level level-incf) (length levels)))
+    (when (< current-level (length levels))
+      (setf *entities* (load-level (aref levels current-level) width height (empty-map))))))
+
 (defun handle-player-input (&optional (changes *destructive-changes*) (entities *entities*))
   (flet ((playable-p (id components)
            (declare (ignore components))
@@ -117,6 +123,13 @@
     (pause-pressed))
   (when (key-action-p :r :press)
     (play-pressed))
+  (when (key-action-p :n :press)
+    (next-level game)
+    (print (current-level game)))
+  (when (key-action-p :b :press)
+    (next-level game -1))
+  (when (key-action-p :m :press)
+    (next-level game 0))
 
   (when (eql *time-travel-state* +time-play+)
     ;; (when (key-action-p :c :press)
