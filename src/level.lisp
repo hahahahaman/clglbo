@@ -94,17 +94,19 @@
                                        (4 (kit.glm:vec4 0.8 0.8 0.4 1.0))
                                        (5 (kit.glm:vec4 1.0 0.5 0.0 1.0))))
                              (:rotation 0.0)
-                             (:brick-solid-p (= brick 1)))
+                             (:brick-solidp (= brick 1))
+                             (:brickp t)
+                             (:collision-type :aabb))
                         bricks))))))
              level))
           (t (error "~a could not be opened.~%" filename)))))
 
 (defun load-level (level &optional (width *width*) (height *height*) (entities *entities*))
   (with-slots (bricks) level
-    ;; background
     (flet ((add-entity (components)
              (setf entities (make-entity components entities))))
 
+      ;; background
       (add-entity (map (:pos (vec2 0.0 0.0))
                        (:texture (get-texture "background"))
                        (:size (vec2 (cfloat width) (cfloat height)))
@@ -126,7 +128,8 @@
                          (:color (vec4 1.0 1.0 1.0 1.0))
                          (:rotation 0.0)
                          (:vel (vec2 0.0 0.0))
-                         (:player t)))
+                         (:playerp t)
+                         (:collision-type :aabb)))
         ;; ball
         (add-entity (map (:pos bpos)
                          (:size (vec2 r r))
@@ -134,12 +137,13 @@
                          (:color (vec4 1.0 1.0 1.0 1.0))
                          (:rotation 0.0)
                          (:vel (vec2 0.0 0.0))
-                         (:follow-player t)
+                         (:follow-playerp t)
                          (:init-vel (vec2 100.0 -350.0))
-                         (:ball t))))
+                         (:ballp t)
+                         (:collision-type :circle))))
       entities)))
 
-(defun level-complete-p (&optional (entities *entities*))
+(defun level-completep (&optional (entities *entities*))
   (= 0 (length
         (find-entities
          (lambda (id comps)

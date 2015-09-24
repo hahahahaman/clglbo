@@ -117,6 +117,11 @@ Remember to free gl-array afterwards."
      ,@body
      (gl:free-gl-array ,var)))
 
+(defun square (x)
+  (* x x))
+(defun cube (x)
+  (* x x x))
+
 (defun cfloat (n)
   "Coerce N to single-float. Just makes the function shorter."
   (coerce n 'single-float))
@@ -128,6 +133,12 @@ Remember to free gl-array afterwards."
 (defun sizeof* (type multiple)
   "Multiply sizeof TYPE, by MULTIPLE"
   (* (sizeof type) multiple))
+
+(defmacro define-vec-op (name func &rest args)
+  `(defun ,name (,@args)
+     (cl:map (type-of ,(car args))
+             ,func
+             ,@args)))
 
 (defun vec-add (v1 v2)
   "Returns a vector of the same type as V1, which is a component-wise sum of
@@ -142,12 +153,25 @@ V1 and V2."
           (lambda (x) (* x f))
           v1))
 
+(defun vec-div (v1 f)
+  (vec-mul v1 (/ 1.0 f)))
+
+(defun vec-length (v)
+  (sqrt (reduce #'+ (cl:map (type-of v) #'square v))))
+
+(defun clamp (value low high)
+  (min high (max low value)))
+(defun vec-clamp (value low high)
+  (cl:map (type-of value) #'clamp value low high))
+
 (defun x-val (vec)
   (aref vec 0))
 (defun y-val (vec)
   (aref vec 1))
 (defun z-val (vec)
   (aref vec 2))
+(defun w-val (vec)
+  (aref vec 3))
 
 ;; (defun (setf x-val) (value vec)
 ;;   (setf (aref vec 0) value))
@@ -269,6 +293,8 @@ whitespaces."
 
 (defun get-map-keys (map)
   (image (lambda (x) (car x)) (convert 'list map)))
+(defun get-map-values (map)
+  (image (lambda (x) (cdr x)) (convert 'list map)))
 ;;; total heap size
 ;; (define-alien-variable ("dynamic_space_size" dynamic-space-size-bytes)
 ;;   unsigned-long)
