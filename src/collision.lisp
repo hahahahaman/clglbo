@@ -49,9 +49,9 @@
 ;;          (collide-p a-circle c))))
 
 (defmethod collidep ((a aabb) (c circle))
-  (let* ((half-extent (vec2-add (aabb-max a) (vec2-mul (aabb-min a) -1.0)))
+  (let* ((half-extent (vec2-div (vec2-sub (aabb-max a) (aabb-min a)) 2.0))
          (a-center (vec2-add (aabb-min a) half-extent))
-         (clamped-dist (vec-clamp (vec2-add (circle-center c) (vec2-mul a-center -1.0))
+         (clamped-dist (vec-clamp (vec2-sub (circle-center c) a-center)
                                   (vec2-mul half-extent -1.0)
                                   half-extent))
          (closest-point (vec2-add a-center clamped-dist))

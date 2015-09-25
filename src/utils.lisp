@@ -174,6 +174,11 @@ V1 and V2."
 (defun vec2-div (v1 f)
   (vec2-mul v1 (/ 1.0 f)))
 
+(declaim (ftype (function (vec2 vec2) vec2) vec2-add))
+(defun vec2-sub (v1 v2)
+  (declare (optimize (speed 3) (safety 0)))
+  (cl:map 'vec2 #'+ (the vec2 v1) (vec2-mul v2 -1.0)))
+
 (defun clamp (value low high)
   (declare (optimize (speed 3) (safety 0)))
   (min high (max low value)))
