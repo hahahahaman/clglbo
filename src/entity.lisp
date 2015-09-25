@@ -41,4 +41,4 @@
   (with entities id value))
 
 (defun find-entities (predicate &optional (entities *entities*))
-  (get-map-keys (filter predicate entities)))
+  (get-map-keys 'list (filter predicate entities)))

@@ -26,6 +26,7 @@
                              (:file "resource-manager")
                              (:file "sprite-renderer")
                              (:file "entity")
+                             (:file "collision")
                              ;; (:file "components")
                              ;; (:file "systems")
                              ;; (:file "clump")

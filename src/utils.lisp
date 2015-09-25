@@ -47,7 +47,7 @@
 
 (defun update-window-title (window title)
   (cl-glfw3:set-window-title
-   (format nil "~A | fps: ~A | frame: ~A | time-travel-state: ~A |"
+   (format nil "~A | fps: ~A | time: ~A | time-travel-state: ~A |"
            title
            (round (average-fps))
            *current-frame*
@@ -122,7 +122,9 @@ Remember to free gl-array afterwards."
 (defun cube (x)
   (* x x x))
 
+(declaim (ftype (function (real) single-float) cfloat))
 (defun cfloat (n)
+  (declare (optimize (speed 3) (safety 0)))
   "Coerce N to single-float. Just makes the function shorter."
   (coerce n 'single-float))
 
@@ -141,16 +143,15 @@ Remember to free gl-array afterwards."
              ,@args)))
 
 (defun vec-add (v1 v2)
+  ;; (declare (optimize (speed 3) (safety 0)))
   "Returns a vector of the same type as V1, which is a component-wise sum of
 V1 and V2."
-  (cl:map (type-of v1)
-          (lambda (x y) (+ x y))
-          v1 v2))
+  (cl:map (type-of v1) #'+ v1 v2))
 
 (defun vec-mul (v1 f)
   "Returns a vector with the same type as V1, which has components multiplied by F."
   (cl:map (type-of v1)
-          (lambda (x) (* x f))
+          (lambda (x) (* (the single-float x) (the single-float f)))
           v1))
 
 (defun vec-div (v1 f)
@@ -159,7 +160,22 @@ V1 and V2."
 (defun vec-length (v)
   (sqrt (reduce #'+ (cl:map (type-of v) #'square v))))
 
+(declaim (ftype (function (vec2 vec2) vec2) vec2-add))
+(defun vec2-add (v1 v2)
+  (declare (optimize (speed 3) (safety 0)))
+  (cl:map 'vec2 #'+ v1 v2))
+
+(declaim (ftype (function (vec2 single-float) vec2) vec2-mul))
+(defun vec2-mul (v1 f)
+  (declare (optimize (speed 3) (safety 0)))
+  (cl:map 'vec2 (lambda (x) (* x f)) v1))
+
+(declaim (ftype (function (vec2 single-float) vec2) vec2-div))
+(defun vec2-div (v1 f)
+  (vec2-mul v1 (/ 1.0 f)))
+
 (defun clamp (value low high)
+  (declare (optimize (speed 3) (safety 0)))
   (min high (max low value)))
 (defun vec-clamp (value low high)
   (cl:map (type-of value) #'clamp value low high))
@@ -187,10 +203,10 @@ V1 and V2."
 ;;     (finally (return current))))
 
 (defmacro get-slot (object &rest nested-slot-names)
-  (iter (with current = object)
-        (for s in nested-slot-names)
-        (setf current `(slot-value ,current ,s))
-        (finally (return current))))
+  (iter (iter:with current = object)
+    (for s in nested-slot-names)
+    (setf current `(slot-value ,current ,s))
+    (finally (return current))))
 
 ;; (defun (setf get-slot) (value object &rest nested-slot-names)
 ;;   (iter (with current = object)
@@ -291,10 +307,10 @@ whitespaces."
            (return (append (subseq place 0 (1+ n))
                            (cons value (nthcdr (+ n 2) place))))))))
 
-(defun get-map-keys (map)
-  (image (lambda (x) (car x)) (convert 'list map)))
-(defun get-map-values (map)
-  (image (lambda (x) (cdr x)) (convert 'list map)))
+(defun get-map-keys (to-type map)
+  (image (lambda (x) (car x)) (convert to-type map)))
+(defun get-map-values (to-type map)
+  (image (lambda (x) (cdr x)) (convert to-type map)))
 ;;; total heap size
 ;; (define-alien-variable ("dynamic_space_size" dynamic-space-size-bytes)
 ;;   unsigned-long)

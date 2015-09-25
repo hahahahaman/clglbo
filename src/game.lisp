@@ -91,7 +91,7 @@
       (setf *entities* (load-level (aref levels current-level) width height (empty-map))))))
 
 (defun handle-player-input (&optional (changes *destructive-changes*) (entities *entities*))
-  (flet ((playable-p (id entity)
+  (flet ((playablep (id entity)
            (declare (ignore entity))
            (and (or (get-component :playerp id) (get-component :follow-playerp id))
                 (get-component :vel id)))
@@ -101,10 +101,14 @@
                   (lambda () (setf *entities* (set-component :vel id (vec2 -200.0 0.0)))))
                  ((key-pressed-p :right)
                   (lambda () (setf *entities* (set-component :vel id (vec2 200.0 0.0)))))
+                 ((key-pressed-p :up)
+                  (lambda () (setf *entities* (set-component :vel id (vec2 0.0 -200.0)))))
+                 ((key-pressed-p :down)
+                  (lambda () (setf *entities* (set-component :vel id (vec2 0.0 200.0)))))
                  (t (lambda () (setf *entities* (set-component :vel id (vec2 0.0 0.0))))))))
     (append changes
-            (get-map-keys (image #'handle-player
-                                 (filter #'playable-p entities))))))
+            (get-map-keys 'list (image #'handle-player
+                                       (filter #'playablep entities))))))
 
 (defmethod handle-input ((game game))
   ;;debugging
@@ -123,13 +127,6 @@
     (pause-pressed))
   (when (key-action-p :r :press)
     (play-pressed))
-  (when (key-action-p :n :press)
-    (next-level game)
-    (print (current-level game)))
-  (when (key-action-p :b :press)
-    (next-level game -1))
-  (when (key-action-p :m :press)
-    (next-level game 0))
 
   (when (eql *time-travel-state* +time-play+)
     ;; (when (key-action-p :c :press)
@@ -145,11 +142,19 @@
     ;;                       :color (vec4 (random 1.0) (random 1.0) (random 1.0) 1.0)
     ;;                       :rotation 0.0
     ;;                       :texture (get-texture "face")))))
+
+    ;;level debugging
+    (when (key-action-p :n :press)
+      (next-level game))
+    (when (key-action-p :b :press)
+      (next-level game -1))
+    (when (key-action-p :m :press)
+      (next-level game 0))
     (setf *destructive-changes* (handle-player-input))))
 
 (defun move-entities (&optional (dt *dt*) (changes *destructive-changes*)
                         (entities *entities*))
-  (flet ((moveable-p (id components)
+  (flet ((moveablep (id components)
            (declare (ignore components))
            (and (get-component :pos id)
                 (get-component :vel id)))
@@ -159,17 +164,17 @@
              (setf *entities* (set-component
                                :pos
                                id
-                               (vec-add (get-component :pos id)
-                                        (vec-mul (get-component :vel id)
-                                                 (cfloat dt))))))))
+                               (vec2-add (get-component :pos id)
+                                         (vec2-mul (get-component :vel id)
+                                                   (cfloat dt))))))))
 
-    (append changes
-            (get-map-keys (image #'move
-                                 (filter #'moveable-p entities))))))
+    (append changes (get-map-keys 'list (image #'move
+                                               (filter #'moveablep entities))))))
 
 (defmethod update ((game game))
   (cond ((eql *time-travel-state* +time-play+) 
          (setf *destructive-changes* (move-entities))
+         (setf *destructive-changes* (entity-collisions))
          (update-entities)
          (update-timeline)
          (setf *destructive-changes* nil))
@@ -192,8 +197,8 @@
                               size
                               color
                               rotation)))))
-    (do-map (id components entities)
-      (declare (ignore components))
+    (do-map (id entity entities)
+      (declare (ignore entity))
       (render-entity id))))
 
 (defmethod render ((game game))
