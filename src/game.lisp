@@ -90,25 +90,41 @@
     (when (< current-level (length levels))
       (setf *entities* (load-level (aref levels current-level) width height (empty-map))))))
 
-(defun handle-player-input (&optional (changes *destructive-changes*) (entities *entities*))
-  (flet ((playablep (id entity)
-           (declare (ignore entity))
-           (and (or (get-component :playerp id) (get-component :follow-playerp id))
-                (get-component :vel id)))
-         (handle-player (id entity)
-           (declare (ignore entity))
-           (cond ((key-pressed-p :left) 
-                  (lambda () (setf *entities* (set-component :vel id (vec2 -200.0 0.0)))))
+(defun handle-player-input (&optional (entities *entities*))
+  (flet ((playablep (entity)
+           (and (or (@ entity :playerp)
+                    (@ entity :follow-playerp))
+                (@ entity :vel)))
+         (handle-player (id entity) 
+           (cond ((key-pressed-p :left)
+                  (lambda ()
+                    (setf *entities*
+                          (set-component :vel id (vec2 -200.0 0.0)))))
                  ((key-pressed-p :right)
-                  (lambda () (setf *entities* (set-component :vel id (vec2 200.0 0.0)))))
+                  (lambda ()
+                    (setf *entities*
+                          (set-component :vel id (vec2 200.0 0.0)))))
                  ((key-pressed-p :up)
-                  (lambda () (setf *entities* (set-component :vel id (vec2 0.0 -200.0)))))
+                  (lambda ()
+                    (setf *entities*
+                          (set-component :vel id (vec2 0.0 -200.0)))))
                  ((key-pressed-p :down)
-                  (lambda () (setf *entities* (set-component :vel id (vec2 0.0 200.0)))))
-                 (t (lambda () (setf *entities* (set-component :vel id (vec2 0.0 0.0))))))))
-    (append changes
-            (get-map-keys 'list (image #'handle-player
-                                       (filter #'playablep entities))))))
+                  (lambda ()
+                    (setf *entities*
+                          (set-component :vel id (vec2 0.0 200.0)))))
+                 ((and (key-action-p :space :press)
+                       (@ entity :ballp))
+                  (lambda ()
+                    (setf *entities*
+                          (set-component :vel id (@ entity :init-vel)))))
+                 (t (lambda ()
+                      (setf *entities*
+                            (set-component :vel id (vec2 0.0 0.0))))))))
+    (let ((new-changes ()))
+      (do-map (id entity entities)
+        (when (playablep entity)
+          (push (handle-player id entity) new-changes)))
+      (reverse new-changes))))
 
 (defmethod handle-input ((game game))
   ;;debugging
@@ -150,31 +166,50 @@
       (next-level game -1))
     (when (key-action-p :m :press)
       (next-level game 0))
-    (setf *destructive-changes* (handle-player-input))))
 
-(defun move-entities (&optional (dt *dt*) (changes *destructive-changes*)
-                        (entities *entities*))
-  (flet ((moveablep (id components)
-           (declare (ignore components))
-           (and (get-component :pos id)
-                (get-component :vel id)))
-         (move (id components)
-           (declare (ignore components))
+    (alexandria:appendf *destructive-changes* (handle-player-input))))
+
+(defun entity-collisions (&optional (entities *entities*))
+  ;; (declare (optimize (speed 3) (safety 0)))
+  (let ((new-changes ())
+        (balls ())
+        (blocks ()))
+    (do-map (id entity entities)
+      (let ((pos (@ entity :pos))
+            (size (@ entity :size))
+            (type (@ entity :collision-type)))
+        (when (and pos size type)
+          (cond ((or (@ entity :brickp) (@ entity :playerp))
+                 (push (cons id (make-collision-obj type pos size)) blocks))
+                ((@ entity :ballp)
+                 (push (cons id (make-collision-obj type pos size)) balls))))))
+    (iter (for (ball-id . ball-obj) in balls)
+      (iter (for (block-id . block-obj) in blocks)
+        (when (collidep ball-obj block-obj)
+          (push (collide ball-id block-id entities) new-changes))))
+    (reverse new-changes)))
+
+(defun move-entities (&optional (dt *dt*) (entities *entities*))
+  (flet ((moveablep (id entity)
+           (declare (ignore id))
+           (and (@ entity :pos)
+                (@ entity :vel)))
+         (move (id entity)
            (lambda ()
-             (setf *entities* (set-component
-                               :pos
-                               id
-                               (vec2-add (get-component :pos id)
-                                         (vec2-mul (get-component :vel id)
-                                                   (cfloat dt))))))))
-
-    (append changes (get-map-keys 'list (image #'move
-                                               (filter #'moveablep entities))))))
+             (setf *entities*
+                   (set-component :pos id
+                                  (vec2-add (@ entity :pos)
+                                            (vec2-mul (@ entity :vel)
+                                                      (cfloat dt))))))))
+    ;; (do-map (id entity entities)
+    ;;   ())
+    (get-map-keys 'list (image #'move
+                               (filter #'moveablep entities)))))
 
 (defmethod update ((game game))
   (cond ((eql *time-travel-state* +time-play+) 
-         (setf *destructive-changes* (move-entities))
-         (setf *destructive-changes* (entity-collisions))
+         (alexandria:appendf *destructive-changes* (move-entities))
+         (alexandria:appendf *destructive-changes* (entity-collisions))
          (update-entities)
          (update-timeline)
          (setf *destructive-changes* nil))

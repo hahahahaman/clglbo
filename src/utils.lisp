@@ -160,6 +160,18 @@ V1 and V2."
 (defun vec-length (v)
   (sqrt (reduce #'+ (cl:map (type-of v) #'square v))))
 
+(defun clamp (value low high)
+  (declare (optimize (speed 3) (safety 0)))
+  (min high (max low value)))
+
+(declaim (ftype (function (single-float single-float) single-float) sfclamp))
+(defun sfclamp (value low high)
+  (declare (optimize (speed 3) (safety 0)))
+  (min high (max low value)))
+
+(defun vec-clamp (value low high)
+  (cl:map (type-of value) #'sfclamp value low high))
+
 (declaim (ftype (function (vec2 vec2) vec2) vec2-add))
 (defun vec2-add (v1 v2)
   (declare (optimize (speed 3) (safety 0)))
@@ -179,11 +191,10 @@ V1 and V2."
   (declare (optimize (speed 3) (safety 0)))
   (cl:map 'vec2 #'+ (the vec2 v1) (vec2-mul v2 -1.0)))
 
-(defun clamp (value low high)
+(declaim (ftype (function (vec2 vec2) vec2) vec2-clamp))
+(defun vec2-clamp (value low high)
   (declare (optimize (speed 3) (safety 0)))
-  (min high (max low value)))
-(defun vec-clamp (value low high)
-  (cl:map (type-of value) #'clamp value low high))
+  (cl:map 'vec2 #'sfclamp value low high))
 
 (defun x-val (vec)
   (aref vec 0))
