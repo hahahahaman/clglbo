@@ -3,9 +3,9 @@
 (in-package #:clglbo)
 
 (defenum:defenum *enum-game-state*
-                 ((+game-active+ 0)
-                  +game-menu+
-                  +game-win+))
+    ((+game-active+ 0)
+     +game-menu+
+     +game-win+))
 
 (defclass game ()
   ((state
@@ -186,30 +186,110 @@
     (iter (for (ball-id . ball-obj) in balls)
       (iter (for (block-id . block-obj) in blocks)
         (when (collidep ball-obj block-obj)
-          (push (collide ball-id block-id entities) new-changes))))
+          (alexandria:appendf new-changes (collide ball-id block-id entities)))))
     (reverse new-changes)))
 
 (defun move-entities (&optional (dt *dt*) (entities *entities*))
-  (flet ((moveablep (id entity)
-           (declare (ignore id))
-           (and (@ entity :pos)
-                (@ entity :vel)))
-         (move (id entity)
-           (lambda ()
-             (setf *entities*
-                   (set-component :pos id
-                                  (vec2-add (@ entity :pos)
-                                            (vec2-mul (@ entity :vel)
-                                                      (cfloat dt))))))))
-    ;; (do-map (id entity entities)
-    ;;   ())
-    (get-map-keys 'list (image #'move
-                               (filter #'moveablep entities)))))
+  (let ((move-changes ())
+        (col-changes ())
+        (dt (cfloat dt)))
+    (flet ((move-validp (id new-pos size type)
+             (let ((obj (make-collision-obj type new-pos size)))
+               (do-map (other-id other-entity entities)
+                 (let ((other-type (@ other-entity :collision-type))
+                       (other-pos (@ other-entity :pos))
+                       (other-size (@ other-entity :size)))
+                   (when (and other-type other-pos
+                              other-size (not (eql id other-id)))
+                     (let ((other-obj (make-collision-obj
+                                       other-type
+                                       other-pos
+                                       other-size)))
+                       (cond ((collidep obj other-obj)
+                              (push (collide id other-id entities) col-changes)
+                              (push (collide other-id id entities) col-changes)
+                              nil)
+                             (t t)))))))))
+      (do-map (id entity entities)
+        (let ((pos (@ entity :pos))
+              (size (@ entity :size))
+              (col-type (@ entity :collision-type))
+              (vel (@ entity :vel))
+              (ballp (@ entity :ballp)))
+          (when (and pos vel) ;; moveable
+            (cond (col-type ;; collidable
+                   ;; x pass
+                   (cond ((move-validp id (vec2 (+ (x-val pos) (* (x-val vel) dt))
+                                                (y-val pos))
+                                       size col-type)
+                          ;; can move
+                          (push (lambda ()
+                                  (let* ((current-entity (get-entity id))
+                                         (current-vel (@ current-entity :vel))
+                                         (current-pos (@ current-entity :pos)))
+                                    (setf *entities*
+                                          (set-component
+                                           :vel
+                                           id
+                                           (vec2 (+ (x-val current-pos)
+                                                    (* (x-val current-vel) dt))
+                                                 (y-val current-pos))))))
+                                move-changes))
+                         (t
+                          ;; hit something
+                          (push (lambda ()
+                                  (let ((current-vel (get-component :vel id)))
+                                    (setf *entities*
+                                          (set-component
+                                           :vel
+                                           id
+                                           (vec2 (- (x-val current-vel))
+                                                 (y-val current-vel))))))
+                                move-changes)))
+                   ;; y pass
+                   (cond ((move-validp id
+                                       (vec2 (x-val pos)
+                                             (+ (y-val vel) (* (y-val vel) dt)))
+                                       size col-type)
+                          ;; can move
+                          (push (lambda ()
+                                  (let* ((current-entity (get-entity id))
+                                         (current-vel (@ current-entity :vel))
+                                         (current-pos (@ current-entity :pos)))
+                                    (setf *entities*
+                                          (set-component
+                                           :vel
+                                           id
+                                           (vec2 (x-val current-pos)
+                                                 (+ (y-val current-pos)
+                                                    (* (y-val current-vel) dt)))))))
+                                move-changes))
+                         (t
+                          (push (lambda ()
+                                  (let ((current-vel (get-component :vel id)))
+                                    (setf *entities*
+                                          (set-component
+                                           :vel
+                                           id
+                                           (vec2 (x-val current-vel)
+                                                 (- (y-val current-vel)))))))
+                                move-changes))))
+                  ;; ghost, just move
+                  (t
+                   (push
+                    (lambda ()
+                      (setf *entities*
+                            (set-component :pos id
+                                           (vec2-add (@ entity :pos)
+                                                     (vec2-mul (@ entity :vel)
+                                                               dt)))))
+                    move-changes)))))))
+    (append move-changes col-changes)))
 
 (defmethod update ((game game))
   (cond ((eql *time-travel-state* +time-play+) 
          (alexandria:appendf *destructive-changes* (move-entities))
-         (alexandria:appendf *destructive-changes* (entity-collisions))
+         ;; (alexandria:appendf *destructive-changes* (entity-collisions))
          (update-entities)
          (update-timeline)
          (setf *destructive-changes* nil))

@@ -70,19 +70,31 @@
 ;;          (lambda ()
 ;;            (setf *entities* (remove-entity id entities))))))
 
-(defun collide (ball-id block-id &optional (entities *entities*))
-  (let ((result
-          (list (lambda ()
-                  (setf *entities*
-                        (set-component :vel ball-id (vec2 0.0 0.0)))))))
-    (when (not (get-component :brick-solid-p block-id))
-      (alexandria:appendf
-       result
-       (list (lambda ()
-               (setf *entities* (remove-entity block-id entities))))))
-    result))
+;; (defun collide (ball-id block-id &optional (entities *entities*))
+;;   (let ((result
+;;           (list (lambda ()
+;;                   (setf *entities*
+;;                         (set-component :vel ball-id (vec2 0.0 0.0)))))))
+;;     (when (not (get-component :brick-solid-p block-id))
+;;       (alexandria:appendf
+;;        result
+;;        (list (lambda ()
+;;                (setf *entities* (remove-entity block-id entities))))))
+;;     result))
+(defun collide (id other-id &optional (entities *entities*))
+  (let ((this (get-entity id entities))
+        (other (get-entity other-id entities)))
+    (cond ((get-entity-component :playerp this)
+           (lambda ()
+             (setf *entities* (set-component :vel id (vec2 0.0 0.0)))))
+          ((and (get-entity-component :brickp this)
+                (not (get-entity-component :brick-solidp this))
+                (get-entity-component :ballp other))
+           (lambda ()
+             (setf *entities* (remove-entity id))))
+          (t (lambda ())))))
 
-(defun make-collision-obj (type pos size)
+(defun make-collision-obj (type &optional (pos (vec2 0.0 0.0)) (size (vec2 1.0 2.0)))
   (cond ((eql type :aabb)
          (make-aabb :min pos :max (vec2-add pos size)))
         ((eql type :circle)

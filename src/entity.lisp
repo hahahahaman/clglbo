@@ -40,5 +40,10 @@
 (defun set-entity (id value  &optional (entities *entities*))
   (with entities id value))
 
+(defun get-entity-component (component entity)
+  (@ entity component))
+(defun set-entity-component (component entity value)
+  (with entity component value))
+
 (defun find-entities (predicate &optional (entities *entities*))
   (get-map-keys 'list (filter predicate entities)))
