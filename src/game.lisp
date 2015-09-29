@@ -7,6 +7,8 @@
                   +game-menu+
                   +game-win+))
 
+(defglobal *deadp* nil)
+
 (defclass game ()
   ((state
     :type (unsigned-byte 32)
@@ -80,7 +82,7 @@
        nil))
 
     ;;; timeline
-    (track-vars *entities*)
+    (track-vars *entities* *deadp*)
 
     (setf *entities* (load-level (aref levels current-level)))))
 
@@ -145,8 +147,7 @@
                    (@ entity :follow-playerp))
           (setf ball entity
                 ball-id id)))
-      (when (and paddle
-                 ball)
+      (when (and paddle ball)
         (let* ((paddle-pos (@ paddle :pos))
                (paddle-size (@ paddle :size)) 
                (ball-size (@ ball :size))
@@ -176,8 +177,9 @@
     (forward-pressed))
   (when (key-action-p :e :press)
     (pause-pressed))
-  (when (key-action-p :r :press)
-    (play-pressed))
+  (when (not *deadp*)
+    (when (key-action-p :r :press)
+      (play-pressed)))
 
   (when (eql *time-travel-state* +time-play+)
     ;; (when (key-action-p :c :press)
@@ -204,26 +206,6 @@
 
     (alexandria:appendf *destructive-changes* (handle-player-input))))
 
-(defun entity-collisions (&optional (entities *entities*))
-  ;; (declare (optimize (speed 3) (safety 0)))
-  (let ((new-changes ())
-        (balls ())
-        (blocks ()))
-    (do-map (id entity entities)
-      (let ((pos (@ entity :pos))
-            (size (@ entity :size))
-            (type (@ entity :collision-type)))
-        (when (and pos size type)
-          (cond ((or (@ entity :brickp) (@ entity :playerp))
-                 (push (cons id (make-collision-obj type pos size)) blocks))
-                ((@ entity :ballp)
-                 (push (cons id (make-collision-obj type pos size)) balls))))))
-    (iter (for (ball-id . ball-obj) in balls)
-      (iter (for (block-id . block-obj) in blocks)
-        (when (collidep ball-obj block-obj)
-          (alexandria:appendf new-changes (collide ball-id block-id entities)))))
-    (reverse new-changes)))
-
 (defun move-entities (&optional (dt *dt*) (entities *entities*))
   (let ((move-changes ())
         (col-changes ())
@@ -245,7 +227,18 @@
                               (push (collide id other-id entities) col-changes)
                               (push (collide other-id id entities) col-changes)
                               (setf result nil))
-                             (()))))))
+                             ((or (< (x-val new-pos) 0.0)
+                                  (< (y-val new-pos) 0.0)
+                                  (> (+ (x-val new-pos) (x-val size)) *width*)
+                                  (> (+ (y-val new-pos) (y-val size)) *height*))
+                              (when (and (@ (@ entities id) :ballp)
+                                         (> (+ (y-val new-pos) (y-val size))
+                                            *height*))
+                                (push (lambda ()
+                                        (setf *deadp* t)) move-changes)
+                                (push (lambda ()
+                                        (pause-pressed)) move-changes))
+                              (setf result nil)))))))
                result)))
       (do-map (id entity entities)
         (let ((pos (@ entity :pos))
