@@ -81,7 +81,6 @@
                          (:follow-playerp t)
                          (:init-vel (vec2 100.0 -350.0))
                          (:ballp t)
-                         (:deadp nil)
                          (:collision-type :circle))))
       entities)))
 
