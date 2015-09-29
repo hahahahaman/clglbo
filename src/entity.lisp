@@ -47,3 +47,14 @@
 
 (defun find-entities (predicate &optional (entities *entities*))
   (get-map-keys 'list (filter predicate entities)))
+
+(defun find-entity-by-component (components &optional (entities *entities*))
+  (let ((found ()))
+    (do-map (x y entities)
+      ;; go through COMPONENTS to see if they are in the current entity
+      ;; if one is not then return NIL, else return T
+      (when (iter (for c in components)
+              (when (null (nth-value 1 (@ y c))) (return nil))
+              (finally (return t)))
+        (push x found)))
+    (reverse found)))

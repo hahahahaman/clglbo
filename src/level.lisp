@@ -61,7 +61,7 @@
              (h 25.0)
              (r 30.0)
              (ppos (vec2 (/ (- *width* w) 2.0) (- *height* h 10.0)))
-             (bpos (vec2 (/ (- *width* r) 2.0) (- (aref ppos 1) r 10.0))))
+             (bpos (vec2 (/ (- *width* r) 2.0) (- (y-val ppos) r 10.0))))
         ;; paddle
         (add-entity (map (:pos ppos)
                          (:size (vec2 w h))

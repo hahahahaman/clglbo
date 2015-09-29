@@ -164,7 +164,7 @@ V1 and V2."
   (declare (optimize (speed 3) (safety 0)))
   (min high (max low value)))
 
-(declaim (ftype (function (single-float single-float) single-float) sfclamp))
+(declaim (ftype (function (single-float single-float single-float) single-float) sfclamp))
 (defun sfclamp (value low high)
   (declare (optimize (speed 3) (safety 0)))
   (min high (max low value)))
@@ -191,7 +191,7 @@ V1 and V2."
   (declare (optimize (speed 3) (safety 0)))
   (cl:map 'vec2 #'+ (the vec2 v1) (vec2-mul v2 -1.0)))
 
-(declaim (ftype (function (vec2 vec2) vec2) vec2-clamp))
+(declaim (ftype (function (vec2 vec2 vec2) vec2) vec2-clamp))
 (defun vec2-clamp (value low high)
   (declare (optimize (speed 3) (safety 0)))
   (cl:map 'vec2 #'sfclamp value low high))
