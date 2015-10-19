@@ -330,12 +330,12 @@
          (forward-time))))
 
 (defun render-entities (&optional (entities *entities*))
-  (flet ((render-entity (id)
-           (let ((pos (get-component :pos id))
-                 (size (get-component :size id))
-                 (color (get-component :color id))
-                 (rotation (get-component :rotation id))
-                 (texture (get-component :texture id)))
+  (flet ((render-entity (entity)
+           (let ((pos (@ entity :pos))
+                 (size (@ entity :size))
+                 (color (@ entity :color))
+                 (rotation (@ entity :rotation))
+                 (texture (@ entity :texture)))
              (when (and pos size color rotation texture)
                (sprite-render texture
                               pos
@@ -343,8 +343,8 @@
                               color
                               rotation)))))
     (do-map (id entity entities)
-      (declare (ignore entity))
-      (render-entity id))))
+      (declare (ignore id))
+      (render-entity entity))))
 
 (defmethod render ((game game))
   (when (not (eql *time-travel-state* +time-paused+))

@@ -12,6 +12,7 @@
                #:glkit
                #:trivial-garbage
                #:defenum
+               #:swank
                ;; #:qua
                )
   :serial t
