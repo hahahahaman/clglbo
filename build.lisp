@@ -12,7 +12,7 @@
               :defenum
               :swank)
 
-(asdf:oos 'asdf:load-op 'clglbo) 
+(asdf:oos 'asdf:load-op 'clglbo)
 (sb-ext:save-lisp-and-die "bo.bin"
                           :toplevel (lambda ()
                                       (sb-posix:putenv
