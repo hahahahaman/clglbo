@@ -93,5 +93,3 @@
                  (solidp (get-component :brick-solid-p id)))
              (and brickp (not solidp))))
          entities))))
-
-
